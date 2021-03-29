@@ -6,6 +6,7 @@
 
 set.seed(20)
 print_legend = 0
+setwd("..")	# run in the R-proj directory
 
 source("covid-model.R")
 source("kc_read-data.R")
@@ -23,7 +24,7 @@ new_strain_fact<-1.5 # relative strength of 2nd strain (50% increase)
 new_check_date=0 # DO NOT switch from case triggers to percent change in cases/hospitalizations
 
 # read in calibration fit parameters (representing all calib months)
-result_file="calib/res_test_dec_fit.Rdata"
+result_file="calibration/res_test_dec_fit.Rdata"
 
 intervention_day = yday(ymd("2020-5-15"))     # Start of intervention protocol
 int_rampup = 14				      # Time to achieve full intervention effect
@@ -51,10 +52,10 @@ calib_params$dynamic_sd_period = 14
 calib_params$sd_inc=c(0,0,0,0)
 
 calib_params$vac_final_rate = 11000		# this one can be changed & will be adopted after ramp end
-calib_params$severity = 1
+calib_params$severity = 1.33
 
 # this loads the vaccination parameters
-source("create_world_scenarios_new_rate.R")
+source("scenarios/create_world_scenarios_new_rate.R")
 
 int_rampup = 14				      # Time to achieve full intervention effect
 
@@ -81,4 +82,4 @@ scenarios_out = get_model_data_param_sets(interventions, int_param_names, calib_
 saveRDS(scenarios_out, file = paste0("../shiny_data/",suffix,".rds"))
 #scenarios_out=readRDS(file = paste0("../shiny_data/",suffix,".rds"))
 
-source("print_world_scenarios_new_rate.R")
+source("scenarios/print_world_scenarios_new_rate.R")

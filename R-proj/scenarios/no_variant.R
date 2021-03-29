@@ -5,6 +5,7 @@
 #Roll out = 2000, 3400, 5000, 8000: lockdown threshold=350, VEs = 90, VEi=10, VEsymp=10 -> y-axis = daily deaths
 
 set.seed(20)
+setwd("..")	# run in the R-proj directory
 
 source("covid-model.R")
 source("kc_read-data.R")
@@ -19,7 +20,7 @@ vac_coverage=0.8
 new_strain_intros=0
 new_strain_fact<-1 # relative strength of 2nd strain (no increase)
 
-new_check_date=730+yday(ymd("2021-01-15")) # date for switch from case triggers to percent change in cases/hospitalizations
+new_check_date=0 # No switch from case triggers to percent change in cases/hospitalizations
 
 vac_eff_hi = 0
 vac_first = as.numeric(prior_group)
@@ -32,7 +33,7 @@ vac_eff_inf2 = 0.1
 
 
 # read in calibration fit parameters (representing all calib months)
-result_file="calib/res_test_dec_fit.Rdata"
+result_file="calibration/res_test_dec_fit.Rdata"
 
 intervention_day = yday(ymd("2020-5-15"))     # Start of intervention protocol
 int_rampup = 14				      # Time to achieve full intervention effect
@@ -52,10 +53,11 @@ calib_params$dynamic_sd_max_snrs = as.numeric(max_sd) + 0.2
 calib_params$sd_inc=c(0,0,0,0)
 
 vax_calib_doy = 366 + yday(ymd("2021-4-02"))
+calib_params$severity = 1
 
 # this loads the vaccination parameters
 #source("create_world_scenarios.R")
-source("create_world_scenarios_new_rate.R")
+source("scenarios/create_world_scenarios_new_rate.R")
 
 int_rampup = 14				      # Time to achieve full intervention effect
 
@@ -80,5 +82,5 @@ scenarios_out = get_model_data_param_sets(interventions, int_param_names, calib_
 saveRDS(scenarios_out, file = paste0("../shiny_data/",suffix,".rds"))
 #scenarios_out=readRDS(file = paste0("../shiny_data/",suffix,".rds"))
 
-#source("print_world_scenarios.R")
-source("print_world_scenarios_new_rate.R")
+#source("scenarios/print_world_scenarios.R")
+source("scenarios/print_world_scenarios_new_rate.R")
