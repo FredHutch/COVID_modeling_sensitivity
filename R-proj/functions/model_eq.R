@@ -200,7 +200,7 @@ par <- as.list(c(state, parameters))
     # hosp fract is used in place of 1 - m_i to indicate fraction of infections that are serious
     # if a strain makes infections more serious then it will modify this fraction!
     #hosp_fract = hosp_fract * severity
-    #cfr = cfr * severity
+    cfr = cfr * severity
 
     nhd = 24
 
@@ -231,7 +231,7 @@ par <- as.list(c(state, parameters))
 
     fmax_i = 2 * fmin_i
     
-    hstar_i = h_i * hosp_fract                   # Hospitalization rate among symptomatic (both diagnosed and not) by age (calculated)
+    hstar_i = h_i * hosp_fract * severity      # Hospitalization rate among symptomatic (both diagnosed and not) by age (calculated)
     pvac = p - vac_eff_pi *p	     # Symptomatic fraction
     rstar_i = r_2 * (1 - hosp_fract) # Recovery rate of the  symptomatic (both diagnosed and not) by age (calculated)
     
