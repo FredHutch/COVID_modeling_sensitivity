@@ -17,7 +17,7 @@ max_sd<-0.6
 prior_group<-4
 trig_min<-100
 sd_delta = 0.1
-vac_coverage=0.8
+vac_coverage=0.94
 new_strain_intros=3
 new_strain_fact<-1.5 # relative strength of 2nd strain (50% increase)
 
@@ -52,7 +52,7 @@ calib_params$dynamic_sd_period = 14
 calib_params$sd_inc=c(0,0,0,0)
 
 calib_params$vac_final_rate = 11000		# this one can be changed & will be adopted after ramp end
-calib_params$severity = 1.33
+calib_params$severity = 1
 
 # this loads the vaccination parameters
 source("scenarios/create_world_scenarios_new_rate.R")

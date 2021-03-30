@@ -101,7 +101,7 @@ doy = doy[-1]
 cases = scenarios_out$cases
 cases = apply(cases,2, diff)
 plot_scenarios(doy, cases, yday(the_data$date), the_data$cases, 
-                y_lab = "Daily Diagnosed Cases", x_lim = NULL, col_pal = cols, col_idx = 1:27,y_lim = c(0,1500),#lwd=lwds,
+                y_lab = "Daily Diagnosed Cases", x_lim = NULL, col_pal = cols, col_idx = 1:27,y_lim = c(0,3000),#lwd=lwds,
                 delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], NULL,
        		lty = c(rep(1, nrow(interventions)+1)), lwd = c(2, rep(1, nrow(interventions))))
 dev.off()

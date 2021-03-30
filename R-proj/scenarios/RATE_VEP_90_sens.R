@@ -6,6 +6,7 @@
 
 set.seed(20)
 print_legend = 0
+setwd("..")	# run in the R-proj directory
 
 source("covid-model.R")
 source("kc_read-data.R")
@@ -16,12 +17,12 @@ p_eff<-0
 min_sd<-0.2
 max_sd<-0.6
 prior_group<-4
-trig_min<-25
+trig_min<-100
 trig_max<-350
 sd_delta = 0.1
 
 # read in calibration fit parameters (representing all calib months)
-result_file="out/res_test_Sept_nhd.Rdata"
+result_file="calibration/res_test_dec_fit.Rdata"
 
 intervention_day = yday(ymd("2020-5-15"))     # Start of intervention protocol
 int_rampup = 14				      # Time to achieve full intervention effect
@@ -33,26 +34,13 @@ calib_params = get_params(calib_vals, names(res$par), params_fix)
 
 # set interventions
 calib_params$beta_d_fact= 0.5
-calib_params$hstar_fact= 1.0
-calib_params$f_fact= 1.0
-calib_params$r_3_intervention = NA
 
 # Temporary params until Rdata file is updated..
 #
-calib_params$delta8_doy = yday(ymd("2020-10-01"))
-calib_params$delta9_doy = yday(ymd("2020-11-01"))
-calib_params$DiagDate8 = yday(ymd("2020-10-15"))
-calib_params$DiagDate9 = yday(ymd("2020-11-15"))
-calib_params$Tests7 = mean_tests("2020-9-15")
-calib_params$Tests8 = mean_tests("2020-10-15")
-calib_params$Pos1 = mean_pos("2020-03-15")	    # Days at which to capture daily positive test avg for the month
-calib_params$Pos2 = mean_pos("2020-04-15")
-calib_params$Pos3 = mean_pos("2020-05-15")
-calib_params$Pos4 = mean_pos("2020-06-15")
-calib_params$Pos5 = mean_pos("2020-07-15")
-calib_params$Pos6 = mean_pos("2020-08-15")
-calib_params$Pos7 = mean_pos("2020-09-15")
-calib_params$Pos8 = mean_pos("2020-10-15")
+calib_params$vac_final_rate = 11000		# this one can be changed & will be adopted after ramp end
+calib_params$severity = 1
+
+calib_params$dynamic_sd = T
 calib_params$sd_trans = 14
 calib_params$dynamic_sd_delta = as.numeric(sd_delta)
 calib_params$dynamic_sd_min = as.numeric(min_sd)
@@ -63,28 +51,20 @@ calib_params$sd_inc=c(0,0,0,0)
 calib_params$dynamic_sd_limit = ((as.numeric(trig_min) + as.numeric(trig_max))/2) * the_pop / 100000
 calib_params$dynamic_sd_hyster = ((as.numeric(trig_max) - as.numeric(trig_min))/2) * the_pop / 100000
 
-
-#calib_params$sd2 = c(calib_params$sd2_1,calib_params$sd2_2,calib_params$sd2_3,calib_params$sd2_4)
-
 # this loads the vaccination parameters
-#source("kc_create_vac_scenario_params.R")
 int_param_names = c("vac_rate","vac_on")
 
 #expanded way (for heatmaps)
 interventions = matrix(c( 
-		       2000, 1,
-		       3400, 1,
 		       5000, 1,
-		       8000, 1,
-		       11000, 1),
-                       byrow = TRUE, nrow = 5)
+		       10000, 1,
+		       15000, 1),
+                       byrow = TRUE, nrow = 3)
 
 row.names(interventions) = c(
-			"Vaccination Rate=2000/day",
-			"Vaccination Rate=3400/day",
 			"Vaccination Rate=5000/day",
-			"Vaccination Rate=8000/day",
-			"Vaccination Rate=11000/day")
+			"Vaccination Rate=10000/day",
+			"Vaccination Rate=15000/day")
 
 colnames(interventions) = int_param_names
 interventions_abbr = row.names(interventions)
@@ -108,51 +88,29 @@ vac_stop_doy = 366 + yday(ymd("2021-12-31"))     # End of vaccination protocol
 
 end_day = 366 + yday(ymd("2021-12-31")) # End of the run
 
-calib_doy = yday(ymd("2020-10-31"))     # End of model calibration
+calib_doy = yday(ymd("2020-12-31"))     # End of model calibration
 
 vac_mutate=1
 vac_mutate_time=366+yday(ymd("2021-1-01"))
 new_strain_fact<-1.55 # relative strength of 2nd strain
 
-suffix=paste0(scen,"_SD_",min_sd,"_to_",max_sd,"_trig_",trig_max)
+suffix=scen
 print(suffix)
 
-calib_params$rho_S7_1=0.003957275
-calib_params$rho_S7_2=0.022899826
-calib_params$rho_S7_3= 0.011881329
-calib_params$rho_S7_4=0.090674800 
-calib_params$sd7_1=0.218055807
-calib_params$sd7_2 = 0.400384141
-calib_params$sd7_3=0.7
-calib_params$sd7_4=0.9
-calib_params$h7_1=0.020029291
-calib_params$h7_2=0.045895869
-calib_params$h7_3=0.028173077
-calib_params$h7_4=0.05
-calib_params$cfr7_1=0
-calib_params$cfr7_2=0
-calib_params$cfr7_3=0.005232754
-calib_params$cfr7_4=0.112719502 
-
-state[sd_adj_idx] = calib_params$sd7_1                  # Social distancing (relaxed fit by age) 
-state[sd_adj_idx+1] = calib_params$sd7_2
-state[sd_adj_idx+2] = calib_params$sd7_3
-state[sd_adj_idx+3] = calib_params$sd7_4
-
 scenarios_out = get_model_data_param_sets(interventions, int_param_names, calib_params, end_day, state)
-saveRDS(scenarios_out, file = paste0("../data/",suffix,".rds"))
+saveRDS(scenarios_out, file = paste0("papers_data/",suffix,".rds"))
 #
 # If you want to test/improve the plotting more rapidly, you can comment out the lines above and just load
 # the saved rds file with the readRDS command below (provided it has been run since the latest model changes)
 #
-scenarios_out=readRDS(file = paste0("../data/",suffix,".rds"))
+scenarios_out=readRDS(file = paste0("papers_data/",suffix,".rds"))
 
-cols = c("red","orange","green","blue","purple")
+cols = c("red","green","blue")
 x_lim = NULL
 delta = c(calib_params$delta1_doy, calib_params$delta2_doy, calib_params$delta3_doy, calib_params$delta4_doy, calib_params$delta5_doy, calib_params$delta6_doy)
 
 # plot all panels for column B of suppl fig 2
-pdf(paste0("to_dan/",suffix,".pdf"), width = 4, height=12)
+pdf(paste0("papers_out/",suffix,".pdf"), width = 4, height=12)
 par(mfrow=c(6,1),mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 
 doy = scenarios_out$doy
@@ -161,29 +119,28 @@ doy = doy[-1]
 cases = scenarios_out$cases
 cases = apply(cases,2, diff)
 plot_scenarios(doy, cases, yday(the_data$date), the_data$cases, 
-                #y_lab = "Daily Diagnosed Cases", x_lim = c(startx,endx), col_pal = cols, col_idx = 1:5,y_lim = c(0,1500),#lwd=lwds,
-                y_lab = "Daily Diagnosed Cases", x_lim = NULL, col_pal = cols, col_idx = 1:5,y_lim = c(0,1500),#lwd=lwds,
+                y_lab = "Daily Diagnosed Cases", x_lim = NULL, col_pal = cols, col_idx = 1:3,y_lim = c(0,3000),#lwd=lwds,
                 delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], NULL)
 
 plot_scenarios(scenarios_out$doy, scenarios_out$inf, yday(the_data$date), NA, 
-               y_lab = "Cumulative Infections", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,0.6*the_pop),#lwd=lwds,
+               y_lab = "Cumulative Infections", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,0.6*the_pop),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = the_pop)
 
 cum_hosp = scenarios_out$cum_hosp
 cum_hosp = apply(cum_hosp,2, diff)
 plot_scenarios(doy, cum_hosp, yday(the_data$date), NA, 
-                y_lab = "Daily Hospitalizations", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,150),#lwd=lwds,
+                y_lab = "Daily Hospitalizations", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,150),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], NULL)
 
 deaths = scenarios_out$deaths
 deaths = apply(deaths,2, diff)
 plot_scenarios(doy, deaths, yday(the_data$date), the_data$deaths, 
-                #y_lab = "Daily Deaths", x_lim = c(startx,endx), col_pal = cols, col_idx = 1:5,y_lim = c(0,25),#lwd=lwds,
-                y_lab = "Daily Deaths", x_lim = NULL, col_pal = cols, col_idx = 1:5,y_lim = c(0,20),#lwd=lwds,
+                #y_lab = "Daily Deaths", x_lim = c(startx,endx), col_pal = cols, col_idx = 1:3,y_lim = c(0,25),#lwd=lwds,
+                y_lab = "Daily Deaths", x_lim = NULL, col_pal = cols, col_idx = 1:3,y_lim = c(0,20),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], NULL)
 
 plot_scenarios(scenarios_out$doy, scenarios_out$sd_2, yday(the_data$date), NA, 
-                y_lab = "Social Distancing (Non-seniors)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,1),#lwd=lwds,
+                y_lab = "Social Distancing (Non-seniors)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,1),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 
 inf = scenarios_out$inf
@@ -194,15 +151,15 @@ perc_inf = 100 * inf2 / inf
 startx= 366 + yday(ymd("2021-1-01"))     # Start of x-axis
 endx= 366 + yday(ymd("2021-11-01"))     # End of x-axis
 plot_scenarios(doy, perc_inf, yday(the_data$date), NA, 
-               y_lab = "% Daily Infections New Variant", x_lim = c(startx,endx), col_pal = cols, col_idx = 1:5,y_lim = c(0,100),#lwd=lwds,
+               y_lab = "% Daily Infections New Variant", x_lim = c(startx,endx), col_pal = cols, col_idx = 1:3,y_lim = c(0,100),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], NULL,all_months=1)
 dev.off()
 
 # plot daily measures for treatment scenarios against social distancing background
-#pdf(paste0("dan/daily_vaccine_effects_",suffix,".pdf"), width = 8, height = 8)
+#pdf(paste0("papers_out/daily_vaccine_effects_",suffix,".pdf"), width = 8, height = 8)
 #startx= 366 + yday(ymd("2021-4-01"))     # Start of x-axis
 #endx= 366 + yday(ymd("2021-12-01"))     # End of x-axis
-pdf(paste0("dan/daily_cases_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/daily_cases_",suffix,".pdf"), width = 5, height = 3.5)
 x_lim = NULL
 #par(mfrow = c(2,2), mar = 0.1 + c(3, 4, 1, 3), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
@@ -214,15 +171,15 @@ doy = doy[-1]
 cases = scenarios_out$cases
 cases = apply(cases,2, diff)
 plot_scenarios(doy, cases, yday(the_data$date), the_data$cases, 
-                y_lab = "Daily Diagnosed Cases", x_lim = NULL, col_pal = cols, col_idx = 1:5,y_lim = c(0,1500),#lwd=lwds,
+                y_lab = "Daily Diagnosed Cases", x_lim = NULL, col_pal = cols, col_idx = 1:3,y_lim = c(0,3000),#lwd=lwds,
                 delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], NULL)
 dev.off()
-pdf(paste0("dan/daily_deaths_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/daily_deaths_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 deaths = scenarios_out$deaths
 deaths = apply(deaths,2, diff)
 plot_scenarios(doy, deaths, yday(the_data$date), the_data$deaths, 
-                y_lab = "Daily Deaths", x_lim = NULL, col_pal = cols, col_idx = 1:5,y_lim = c(0,20),#lwd=lwds,
+                y_lab = "Daily Deaths", x_lim = NULL, col_pal = cols, col_idx = 1:3,y_lim = c(0,20),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], NULL)
 #legend("topleft",
 #       legend = c(0, NA, NA, NA, NA, 0.5, NA, NA, NA, NA, 1),
@@ -231,7 +188,7 @@ plot_scenarios(doy, deaths, yday(the_data$date), the_data$deaths,
 #       title = "social distancing")
 
 dev.off()
-pdf(paste0("dan/daily_perc_inf2_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/daily_perc_inf2_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 inf = scenarios_out$inf
 inf = apply(inf,2, diff)
@@ -241,42 +198,42 @@ perc_inf = 100 * inf2 / inf
 startx= 366 + yday(ymd("2021-1-01"))     # Start of x-axis
 endx= 366 + yday(ymd("2021-11-01"))     # End of x-axis
 plot_scenarios(doy, perc_inf, yday(the_data$date), NA, 
-               y_lab = "% Daily Infections New Variant", x_lim = c(startx,endx), col_pal = cols, col_idx = 1:5,y_lim = c(0,100),#lwd=lwds,
+               y_lab = "% Daily Infections New Variant", x_lim = c(startx,endx), col_pal = cols, col_idx = 1:3,y_lim = c(0,100),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], NULL,all_months=1)
 
 dev.off()
-pdf(paste0("dan/daily_infs_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/daily_infs_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 inf = scenarios_out$inf
 inf = apply(inf,2, diff)
 plot_scenarios(doy, inf, yday(the_data$date), NA, 
-               y_lab = "Daily Infections", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,10000),#lwd=lwds, 
+               y_lab = "Daily Infections", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,10000),#lwd=lwds, 
 		delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], NULL)
 
 dev.off()
-pdf(paste0("dan/log_daily_infs_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/log_daily_infs_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 inf = scenarios_out$inf
 inf = apply(inf,2, diff)
 plot_scenarios(doy, log10(inf), yday(the_data$date), NA, 
-               y_lab = "Log Daily Infections", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,4),#lwd=lwds,
+               y_lab = "Log Daily Infections", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,4),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], NULL)
 
 dev.off()
-pdf(paste0("dan/daily_hosps_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/daily_hosps_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 cum_hosp = scenarios_out$cum_hosp
 cum_hosp = apply(cum_hosp,2, diff)
 plot_scenarios(doy, cum_hosp, yday(the_data$date), NA, 
-                y_lab = "Daily Hospitalizations", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,150),#lwd=lwds,
+                y_lab = "Daily Hospitalizations", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,150),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], NULL)
 dev.off()
 
-pdf(paste0("dan/reff_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/reff_",suffix,".pdf"), width = 5, height = 3.5)
 #par(mfrow = c(1,1), mar = 0.1 + c(3, 4, 1, 3), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_scenarios(scenarios_out$doy, scenarios_out$Reff, yday(the_data$date), NA, 
-                y_lab = "R Effective", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,2),#lwd=lwds,
+                y_lab = "R Effective", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,2),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0,
 		target=1)
 if(print_legend==1) {
@@ -287,11 +244,11 @@ if(print_legend==1) {
 }
 
 dev.off()
-pdf(paste0("dan/snr_SD_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/snr_SD_",suffix,".pdf"), width = 5, height = 3.5)
 #par(mfrow = c(1,1), mar = 0.1 + c(3, 4, 1, 3), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_scenarios(scenarios_out$doy, scenarios_out$sd_4, yday(the_data$date), NA, 
-                y_lab = "Social Distancing (Seniors)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,1),#lwd=lwds,
+                y_lab = "Social Distancing (Seniors)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,1),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 
 if(print_legend==1) {
@@ -303,11 +260,11 @@ if(print_legend==1) {
 }
 
 dev.off()
-pdf(paste0("dan/other_SD_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/other_SD_",suffix,".pdf"), width = 5, height = 3.5)
 #par(mfrow = c(1,1), mar = 0.1 + c(3, 4, 1, 3), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_scenarios(scenarios_out$doy, scenarios_out$sd_2, yday(the_data$date), NA, 
-                y_lab = "Social Distancing (Non-seniors)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,1),#lwd=lwds,
+                y_lab = "Social Distancing (Non-seniors)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,1),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 
 if(print_legend==1) {
@@ -319,11 +276,11 @@ if(print_legend==1) {
 }
 
 dev.off()
-pdf(paste0("dan/case_rates_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/case_rates_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 #par(mfrow = c(1,1), mar = 0.1 + c(3, 4, 1, 3), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_scenario_rates(scenarios_out$doy, scenarios_out$cases, yday(the_data$date), the_data$cases, 
-                y_lab = "2 week Case Rates / 100k Pop", x_lim = x_lim, col_pal = cols, col_idx = 1:5, y_lim = c(0,1500),#lwd=lwds,
+                y_lab = "2 week Case Rates / 100k Pop", x_lim = x_lim, col_pal = cols, col_idx = 1:3, y_lim = c(0,1500),#lwd=lwds,
                 delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = the_pop,
 		limit=100000*calib_params$dynamic_sd_limit/the_pop, hyster=100000*calib_params$dynamic_sd_hyster/the_pop
 	 	)
@@ -342,15 +299,15 @@ if(print_legend==1) {
 dev.off()
 
 # plot treatment reduction scenarios against social distancing background
-#pdf(paste0("dan/vaccine_reductions_",suffix,".pdf"), width = 8, height = 8)
-pdf(paste0("dan/case_reduct_",suffix,".pdf"), width = 5, height = 3.5)
+#pdf(paste0("papers_out/vaccine_reductions_",suffix,".pdf"), width = 8, height = 8)
+pdf(paste0("papers_out/case_reduct_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 x_lim = NULL
 #par(mfrow = c(2,2), mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 delta = c(calib_params$delta1_doy, calib_params$delta2_doy, calib_params$delta3_doy, calib_params$delta4_doy, calib_params$delta5_doy, calib_params$delta6_doy)
 
 plot_delta_scenarios(scenarios_out$doy, scenarios_out$cases, yday(the_data$date), the_data$cases, 
-                y_lab = "Reduction in Diagnosed Cases", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,120000),#lwd=lwds,
+                y_lab = "Reduction in Diagnosed Cases", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,120000),#lwd=lwds,
                 delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = the_pop)
 if(print_legend==1) {
     legend("topleft", 
@@ -360,10 +317,10 @@ if(print_legend==1) {
 }
 dev.off()
 
-pdf(paste0("dan/death_reduct_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/death_reduct_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_delta_scenarios(scenarios_out$doy, scenarios_out$deaths, yday(the_data$date), the_data$deaths, 
-                y_lab = "Reduction in Deaths", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,3000),#lwd=lwds,
+                y_lab = "Reduction in Deaths", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,3000),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = NULL)
 if(print_legend==1) {
     legend("topleft",
@@ -374,130 +331,130 @@ if(print_legend==1) {
 }
 
 dev.off()
-pdf(paste0("dan/inf_reduct_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/inf_reduct_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_delta_scenarios(scenarios_out$doy, scenarios_out$inf, yday(the_data$date), NA, 
-               y_lab = "Reduction in Infections", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,1e6),#lwd=lwds,
+               y_lab = "Reduction in Infections", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,1e6),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = NULL)
 
 dev.off()
-pdf(paste0("dan/hosp_reduct_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/hosp_reduct_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_delta_scenarios(scenarios_out$doy, scenarios_out$cum_hosp, yday(the_data$date), NA, 
-                y_lab = "Reduction in Hospitalizations", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,15000),#lwd=lwds,
+                y_lab = "Reduction in Hospitalizations", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,15000),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = NULL)
 dev.off()
-pdf(paste0("dan/susc_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/susc_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 #par(mfrow = c(1,1), mar = 0.1 + c(3, 4, 1, 3), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_scenarios(scenarios_out$doy, scenarios_out$susc_1, yday(the_data$date), NA, 
-                y_lab = "Susceptible (0-19)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,1e6),#lwd=lwds,
+                y_lab = "Susceptible (0-19)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,1e6),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 plot_scenarios(scenarios_out$doy, scenarios_out$susc_2, yday(the_data$date), NA, 
-                y_lab = "Susceptible (20-49)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,1e6),#lwd=lwds,
+                y_lab = "Susceptible (20-49)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,1e6),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 plot_scenarios(scenarios_out$doy, scenarios_out$susc_3, yday(the_data$date), NA, 
-                y_lab = "Susceptible (50-69)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,1e6),#lwd=lwds,
+                y_lab = "Susceptible (50-69)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,1e6),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 plot_scenarios(scenarios_out$doy, scenarios_out$susc_4, yday(the_data$date), NA, 
-                y_lab = "Susceptible (seniors)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,1e6),#lwd=lwds,
+                y_lab = "Susceptible (seniors)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,1e6),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 dev.off()
-pdf(paste0("dan/vax_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/vax_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 #par(mfrow = c(1,1), mar = 0.1 + c(3, 4, 1, 3), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_scenarios(scenarios_out$doy, scenarios_out$vax, yday(the_data$date), NA, 
-                y_lab = "Total Vaccinated", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,the_pop),#lwd=lwds,
+                y_lab = "Total Vaccinated", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,the_pop),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = the_pop)
 dev.off()
-pdf(paste0("dan/vacs_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/vacs_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 #par(mfrow = c(1,1), mar = 0.1 + c(3, 4, 1, 3), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_scenarios(scenarios_out$doy, scenarios_out$vac_1, yday(the_data$date), NA, 
-                y_lab = "Vaccinated (0-19)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,1e6),#lwd=lwds,
+                y_lab = "Vaccinated (0-19)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,1e6),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 plot_scenarios(scenarios_out$doy, scenarios_out$vac_2, yday(the_data$date), NA, 
-                y_lab = "Vaccinated (20-49)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,1e6),#lwd=lwds,
+                y_lab = "Vaccinated (20-49)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,1e6),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 plot_scenarios(scenarios_out$doy, scenarios_out$vac_3, yday(the_data$date), NA, 
-                y_lab = "Vaccinated (50-69)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,1e6),#lwd=lwds,
+                y_lab = "Vaccinated (50-69)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,1e6),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 plot_scenarios(scenarios_out$doy, scenarios_out$vac_4, yday(the_data$date), NA, 
-                y_lab = "Vaccinated (seniors)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,1e6),#lwd=lwds,
+                y_lab = "Vaccinated (seniors)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,1e6),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 dev.off()
-pdf(paste0("dan/age_deaths_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/age_deaths_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 #par(mfrow = c(1,1), mar = 0.1 + c(3, 4, 1, 3), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_scenarios(scenarios_out$doy, scenarios_out$deaths_1, yday(the_data$date), NA, 
-                y_lab = "Deaths (0-19)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,3000),#lwd=lwds,
+                y_lab = "Deaths (0-19)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,3000),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 plot_scenarios(scenarios_out$doy, scenarios_out$deaths_2, yday(the_data$date), NA, 
-                y_lab = "Deaths (20-49)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,3000),#lwd=lwds,
+                y_lab = "Deaths (20-49)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,3000),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 plot_scenarios(scenarios_out$doy, scenarios_out$deaths_3, yday(the_data$date), NA, 
-                y_lab = "Deaths (50-69)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,3000),#lwd=lwds,
+                y_lab = "Deaths (50-69)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,3000),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 plot_scenarios(scenarios_out$doy, scenarios_out$deaths_4, yday(the_data$date), NA, 
-                y_lab = "Deaths (seniors)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,3000),#lwd=lwds,
+                y_lab = "Deaths (seniors)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,3000),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 dev.off()
-pdf(paste0("dan/age_hosps_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/age_hosps_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 #par(mfrow = c(1,1), mar = 0.1 + c(3, 4, 1, 3), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_scenarios(scenarios_out$doy, scenarios_out$hosp_1, yday(the_data$date), NA, 
-                y_lab = "Hosp (0-19)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,400),#lwd=lwds,
+                y_lab = "Hosp (0-19)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,400),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 plot_scenarios(scenarios_out$doy, scenarios_out$hosp_2, yday(the_data$date), NA, 
-                y_lab = "Hosp (20-49)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,400),#lwd=lwds,
+                y_lab = "Hosp (20-49)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,400),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 plot_scenarios(scenarios_out$doy, scenarios_out$hosp_3, yday(the_data$date), NA, 
-                y_lab = "Hosp (50-69)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,400),#lwd=lwds,
+                y_lab = "Hosp (50-69)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,400),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 plot_scenarios(scenarios_out$doy, scenarios_out$hosp_4, yday(the_data$date), NA, 
-                y_lab = "Hosp (seniors)", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,400),#lwd=lwds,
+                y_lab = "Hosp (seniors)", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,400),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = 0)
 dev.off()
-pdf(paste0("dan/infs_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/infs_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_scenarios(scenarios_out$doy, scenarios_out$inf, yday(the_data$date), NA, 
-               y_lab = "Cumulative Infections", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,0.6*the_pop),#lwd=lwds,
+               y_lab = "Cumulative Infections", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,0.6*the_pop),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = NULL, scenarios_out$sd_2[,1], totalpop = the_pop)
 
 dev.off()
-pdf(paste0("dan/inf1_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/inf1_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_scenarios(scenarios_out$doy, scenarios_out$inf1, yday(the_data$date), NA, 
-               y_lab = "Main Strain Infections", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,0.6*the_pop),#lwd=lwds,
+               y_lab = "Main Strain Infections", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,0.6*the_pop),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = the_pop)
 
 dev.off()
-pdf(paste0("dan/inf2_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/inf2_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 plot_scenarios(scenarios_out$doy, scenarios_out$inf2, yday(the_data$date), NA, 
-               y_lab = "New Strain Infections", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,0.6*the_pop),#lwd=lwds,
+               y_lab = "New Strain Infections", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,0.6*the_pop),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], totalpop = the_pop)
 
 dev.off()
-pdf(paste0("dan/daily_inf1_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/daily_inf1_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 inf = scenarios_out$inf1
 inf = apply(inf,2, diff)
 plot_scenarios(doy, inf, yday(the_data$date), NA, 
-               y_lab = "Daily Infections Main Strain", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,8000),#lwd=lwds,
+               y_lab = "Daily Infections Main Strain", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,8000),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], NULL)
 
 dev.off()
-pdf(paste0("dan/daily_inf2_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/daily_inf2_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(3, 4, 1, 4), mgp = c(3, 0.5, 0), oma = c(3,2,0,0))
 inf = scenarios_out$inf2
 inf = apply(inf,2, diff)
 plot_scenarios(doy, inf, yday(the_data$date), NA, 
-               y_lab = "Daily Infections New Strain", x_lim = x_lim, col_pal = cols, col_idx = 1:5,y_lim = c(0,8000),#lwd=lwds,
+               y_lab = "Daily Infections New Strain", x_lim = x_lim, col_pal = cols, col_idx = 1:3,y_lim = c(0,8000),#lwd=lwds,
                delta = NULL, vaccination_date = vac_init_doy, calib_date = calib_doy, scenarios_out$sd_2[,1], NULL)
 
 dev.off()
-pdf(paste0("to_dan/legend_",suffix,".pdf"), width = 5, height = 3.5)
+pdf(paste0("papers_out/legend_",suffix,".pdf"), width = 5, height = 3.5)
 par(mar = 0.1 + c(2, 1, 1, 4), mgp = c(2, 0.5, 0), oma = c(2,1,0,0))
     plot.new()
     legend("topleft", 

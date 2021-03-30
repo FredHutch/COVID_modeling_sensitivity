@@ -17,7 +17,7 @@ max_sd<-0.6
 prior_group<-4
 trig_min<-100
 sd_delta = 0.1
-vac_coverage=0.8
+vac_coverage=0.94
 new_strain_intros=1
 new_strain_fact<-1.5 # relative strength of 2nd strain
 
