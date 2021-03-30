@@ -130,7 +130,7 @@ get_model_data <- function(pars, pars_names, pars_fixed, daycount, state)
 	  # check threshold
 	  tighten = 0
 	  loosen = 0
-	  if (i < new_check_date || parameters$sd_growth_trigger == 0)
+	  if (new_check_date == 0 || i < new_check_date || parameters$sd_growth_trigger == 0)
 	  {
 	      sd_limit200 = 110 * the_pop / 100000
 	      sd_hyster200 = 90 * the_pop / 100000
@@ -141,19 +141,19 @@ get_model_data <- function(pars, pars_names, pars_fixed, daycount, state)
 	      sd_limit650 = 335 * the_pop / 100000
 	      sd_hyster650 = 315 * the_pop / 100000
 	      if (curr_case_delta > sd_limit200 && print200==0) {
-		 #print(paste("Saw bi-weekly exceeed 200 at t=",i))
+		 print(paste("Saw bi-weekly exceeed 200 at t=",i))
 		 print200=1
 	      }
 	      if (curr_case_delta > sd_limit350 && print350==0) {
-		 #print(paste("Saw bi-weekly exceeed 350 at t=",i))
+		 print(paste("Saw bi-weekly exceeed 350 at t=",i))
 		 print350=1
 	      }
 	      if (curr_case_delta > sd_limit500 && print500==0) {
-		 #print(paste("Saw bi-weekly exceeed 500 at t=",i))
+		 print(paste("Saw bi-weekly exceeed 500 at t=",i))
 		 print500=1
 	      }
 	      if (curr_case_delta > sd_limit650 && print650==0) {
-		 #print(paste("Saw bi-weekly exceeed 650 at t=",i))
+		 print(paste("Saw bi-weekly exceeed 650 at t=",i))
 		 print650=1
 	      }
 	      if (curr_case_delta > (dynamic_sd_limit + dynamic_sd_hyster))
@@ -207,13 +207,13 @@ get_model_data <- function(pars, pars_names, pars_fixed, daycount, state)
 	  {
 	      #parameters$sd_inc=rep((parameters$dynamic_sd_delta/parameters$dynamic_sd_period),4)
 	      parameters$sd_inc=(sd_high - curr_sd)/parameters$dynamic_sd_period
-	      #print(paste("rate=",curr_case_delta*100000/the_pop,"SD=",curr_sd[2],"toward high at t=",i,"sd_inc=",parameters$sd_inc[2]))
+	      print(paste("tightening: rate=",curr_case_delta*100000/the_pop,"SD=",curr_sd[2],"toward high at t=",i,"sd_inc=",parameters$sd_inc[2]))
 	  }
 	  if (loosen==1)
 	  {
 	      parameters$sd_inc=rep((-parameters$dynamic_sd_delta/parameters$dynamic_sd_period),4)
 	      #parameters$sd_inc=(sd_low - curr_sd)/parameters$dynamic_sd_period
-	      #print(paste("rate=",curr_case_delta*100000/the_pop,"SD=",curr_sd[2],"toward low at t=",i,"sd_inc=",parameters$sd_inc[2]))
+	      print(paste("loosening: rate=",curr_case_delta*100000/the_pop,"SD=",curr_sd[2],"toward low at t=",i,"sd_inc=",parameters$sd_inc[2]))
 	  }
 	  last_case_delta = curr_cum_diag - saved_cum_diag
 	  last_hosp_delta = curr_cum_hosp - saved_cum_hosp
