@@ -11,4 +11,29 @@ Swan DA, Goyal A, Bracis C, Moore M, Krantz E, Brown E, Cardozo-Ojeda, Reeves DB
 
 Swan DA, Bracis C, Janes H, Moore M, Matrajt L, Reeves DB, Burns E, Donnell D, Cohen MS, Schiffer JT, Dimitrov D. COVID-19 vaccines that reduce symptoms but do not block infection need higher coverage and faster rollout to achieve population impact. medRxiv (2020).
 
-As well as the shiny-app representation of the model which can be viewed at https://covidmodeling.fredhutch.org.
+It also supports the shiny-app representation of the model which can be viewed at https://covidmodeling.fredhutch.org.
+
+The sub-directories are organized as follows:
+
+R-proj - contains the following sub-directories for the R code
+
+    functions - R files that implement various model functions
+
+    scenarios - contains various local sensitivity scenarios and variant scenarios for the shiny app.
+	cd to this directory to run those scenarios.
+
+    sensitivity - contains files used in the global sensitivity analysis for the papers
+
+    calibration - contains scripts to support compiling parameters to fit KC epidemic through 12/31/2020.
+
+    shiny_out - plots to show what is in the rds files for the shiny app
+
+    papers_data - rds files for the paper plots
+
+    papers_out - pdf files for the paper plots
+
+data - KC input data files used in calibration
+
+shiny_data - the rds files for the shiny app
+
+refs - references used when creating and parameterizing the model
