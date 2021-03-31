@@ -200,7 +200,7 @@ par <- as.list(c(state, parameters))
     # hosp fract is used in place of 1 - m_i to indicate fraction of infections that are serious
     # if a strain makes infections more serious then it will modify this fraction!
     #hosp_fract = hosp_fract * severity
-    cfr = cfr * severity
+    nhd_cfr = cfr * severity
 
     nhd = 24
 
@@ -225,7 +225,7 @@ par <- as.list(c(state, parameters))
     for (i in 1:4) {
 	if (hosp_fract[i]>0) {
 	    fmin_i[i] = cfr[i] / hosp_fract[i] / hd
-    	    die_i[i] = cfr[i] / hosp_fract[i] / nhd
+    	    die_i[i] = nhd_cfr[i] / hosp_fract[i] / nhd
 	}
     }
 

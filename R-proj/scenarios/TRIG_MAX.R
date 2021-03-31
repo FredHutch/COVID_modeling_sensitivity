@@ -1,4 +1,7 @@
 #Line diagrams for Dan's Vaccine Sensitivity paper
+#
+#In this case we are varying the limit for triggering lockdown (Cmax in the literature) and holding
+#other variables at default values.
 
 set.seed(20)
 print_legend = 0
@@ -11,13 +14,18 @@ scen<-"TRIG_MAX"
 p_eff<-0
 min_sd<-0.2
 max_sd<-0.6
-rate<-11000
+rate<-8000
 prior_group<-4
 trig_min<-100
 sd_delta = 0.1
 
-vac_coverage=0.8
-new_strain_intros=1
+vac_coverage=0.94
+
+#default b117 strain characteristics, but generic 90% Vsusc efficacy of vaccine
+new_strain_intros=3
+new_strain_severity = 1.6
+new_strain_fact<-1.55 # relative strength of 2nd strain
+
 new_check_date=0 # No switch from case triggers to percent change in cases/hospitalizations
 
 # read in calibration fit parameters (representing all calib months)
@@ -34,7 +42,7 @@ calib_params = get_params(calib_vals, names(res$par), params_fix)
 # set interventions
 calib_params$beta_d_fact= 0.5
 
-calib_params$vac_final_rate = 11000		# this one can be changed & will be adopted after ramp end
+calib_params$vac_final_rate = as.numeric(rate)		# this one will be adopted after vac_schedule ends
 calib_params$severity = 1
 
 calib_params$dynamic_sd = T
@@ -90,7 +98,6 @@ calib_doy = calib_params$calib_doy
 
 vac_mutate=1
 vac_mutate_time=366+yday(ymd("2021-1-01"))
-new_strain_fact<-1.55 # relative strength of 2nd strain
 
 suffix=scen
 print(suffix)
