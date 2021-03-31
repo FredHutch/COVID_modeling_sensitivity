@@ -1,8 +1,6 @@
-#Line diagrams for Dan's Vaccine Senesitivity paper
-
-#Roll out = 2000, 3400, 5000, 8000: lockdown threshold=350, VEs = 90, VEi=10, VEsymp=10 -> y-axis = daily cases
-#Roll out = 2000, 3400, 5000, 8000: lockdown threshold=350, VEs = 90, VEi=10, VEsymp=10 -> y-axis = daily hospitalizations
-#Roll out = 2000, 3400, 5000, 8000: lockdown threshold=350, VEs = 90, VEi=10, VEsymp=10 -> y-axis = daily deaths
+#Scenarios for B1351 variant as specified for shiny app 
+#
+# 27 scenarios representing 3 values each of SDmin, Cmax and final Vax rate/day
 
 set.seed(20)
 setwd("..")	# run in the R-proj directory
@@ -20,6 +18,7 @@ sd_delta = 0.1
 vac_coverage=0.94
 new_strain_intros=1
 new_strain_fact<-1.5 # relative strength of 2nd strain
+new_strain_severity<-1 # impact on hosp & death vs main variant
 
 new_check_date=0 # DO NOT switch from case triggers to percent change in cases/hospitalizations
 

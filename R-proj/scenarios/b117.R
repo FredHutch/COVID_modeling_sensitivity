@@ -1,8 +1,6 @@
-#Line diagrams for Dan's Vaccine Senesitivity paper
-
-#Roll out = 2000, 3400, 5000, 8000: lockdown threshold=350, VEs = 90, VEi=10, VEsymp=10 -> y-axis = daily cases
-#Roll out = 2000, 3400, 5000, 8000: lockdown threshold=350, VEs = 90, VEi=10, VEsymp=10 -> y-axis = daily hospitalizations
-#Roll out = 2000, 3400, 5000, 8000: lockdown threshold=350, VEs = 90, VEi=10, VEsymp=10 -> y-axis = daily deaths
+#Scenario for B117 variant as specified for shiny app 
+#
+# 27 scenarios representing 3 values each of SDmin, Cmax and final Vax rate/day
 
 set.seed(20)
 print_legend = 0
@@ -20,6 +18,7 @@ sd_delta = 0.1
 vac_coverage=0.94
 new_strain_intros=3
 new_strain_fact<-1.5 # relative strength of 2nd strain (50% increase)
+new_strain_severity<-1.6 # impact on hosp & death vs main variant
 
 new_check_date=0 # DO NOT switch from case triggers to percent change in cases/hospitalizations
 
@@ -51,7 +50,6 @@ calib_params$dynamic_sd_max_snrs = as.numeric(max_sd) + 0.2
 calib_params$dynamic_sd_period = 14
 calib_params$sd_inc=c(0,0,0,0)
 
-calib_params$vac_final_rate = 11000		# this one can be changed & will be adopted after ramp end
 calib_params$severity = 1
 
 # this loads the vaccination parameters
