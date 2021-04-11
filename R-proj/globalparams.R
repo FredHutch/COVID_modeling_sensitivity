@@ -62,6 +62,10 @@ params_fix <- list(gamma_1 = 0.33,                          # Progression rates 
                    DiagDate10 = yday(ymd("2020-12-15")),
                    DiagDate11 = 366+yday(ymd("2021-01-15")),
 
+		   VacChild16plus = 366+yday(ymd("2021-04-1")), # April 1, 2021
+		   VacChild12plus = 366+yday(ymd("2021-06-1")), # June 1, 2021
+		   VacChild = 366+yday(ymd("2021-09-1")), # Sept 1, 2021
+
                    Tests1 = mean_tests("2020-03-15"),
                    Tests2 = mean_tests("2020-04-15"),
                    Tests3 = mean_tests("2020-05-15"),

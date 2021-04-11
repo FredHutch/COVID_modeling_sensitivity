@@ -1,6 +1,6 @@
 #Scenario for B117 variant as specified for shiny app 
 #
-# 27 scenarios representing 3 values each of SDmin, Cmax and final Vax rate/day
+# 243 scenarios representing 3 values each of SDmin, Cmin, Cmax, Coverage and final Vax rate/day
 
 set.seed(20)
 print_legend = 0
@@ -10,15 +10,14 @@ source("covid-model.R")
 source("kc_read-data.R")
 
 args<-commandArgs(trailingOnly=T)
-scen<-"B117_VAX"
+scen<-"B117_BIG"
 max_sd<-0.6
 prior_group<-4
-trig_min<-100
-sd_delta = 0.1
-vac_coverage=0.94
-new_strain_intros=3
-new_strain_fact<-1.5 # relative strength of 2nd strain (50% increase)
-new_strain_severity<-1.6 # impact on hosp & death vs main variant
+trig_min<-200
+sd_delta = 0 # SD release rate same as tightening rate (over 2 week period)
+new_strain_intros=0.25
+new_strain_fact<-1.55 # relative strength of 2nd strain (50% increase)
+new_strain_severity<-1.55 # impact on hosp & death vs main variant
 
 new_check_date=0 # DO NOT switch from case triggers to percent change in cases/hospitalizations
 
@@ -29,10 +28,10 @@ intervention_day = yday(ymd("2020-5-15"))     # Start of intervention protocol
 int_rampup = 14				      # Time to achieve full intervention effect
 
 vac_eff_pi1 = 0.95
-vac_eff_susc1 = 0.8
+vac_eff_susc1 = 0.9
 vac_eff_inf1 = 0.1
 vac_eff_pi2 = 0.86
-vac_eff_susc2 = 0.7
+vac_eff_susc2 = 0.8
 vac_eff_inf2 = 0.1
 
 load(file = result_file)
@@ -52,8 +51,13 @@ calib_params$sd_inc=c(0,0,0,0)
 
 calib_params$severity = 1
 
-# this loads the vaccination parameters
-source("scenarios/create_world_scenarios_new_rate.R")
+#Turn off all childhood vaccinations (0-19)
+calib_params$VacChild16plus = 0
+calib_params$VacChild12plus = 0
+calib_params$VacChild = 0
+
+# this loads the default parameters and values deither side of the defaults
+source("scenarios/create_all_worlds.R")
 
 int_rampup = 14				      # Time to achieve full intervention effect
 
@@ -80,4 +84,5 @@ scenarios_out = get_model_data_param_sets(interventions, int_param_names, calib_
 saveRDS(scenarios_out, file = paste0("../shiny_data/",suffix,".rds"))
 #scenarios_out=readRDS(file = paste0("../shiny_data/",suffix,".rds"))
 
-source("scenarios/print_world_scenarios_new_rate.R")
+source("scenarios/print_all_worlds.R")
+#print(row.names(interventions))

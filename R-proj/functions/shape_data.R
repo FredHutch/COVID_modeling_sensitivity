@@ -69,7 +69,8 @@ get_model_data <- function(pars, pars_names, pars_fixed, daycount, state)
     curr_cum_hosp = out[nrow(out),"tot_hosp_i1"]+out[nrow(out),"tot_hosp_i2"]+out[nrow(out),"tot_hosp_i3"]+out[nrow(out),"tot_hosp_i4"]
     last_case_delta = curr_cum_diag - saved_cum_diag
     last_hosp_delta = curr_cum_hosp - saved_cum_hosp
-    print(paste("At t=",i,",bi-weekly case delta=",last_case_delta,"bi-weekly hosp delta=",last_hosp_delta))
+    if (print_debug)
+        print(paste("At t=",i,",bi-weekly case delta=",last_case_delta,"bi-weekly hosp delta=",last_hosp_delta))
 
     saved_cum_diag = curr_cum_diag
     saved_cum_hosp = curr_cum_hosp
@@ -140,19 +141,19 @@ get_model_data <- function(pars, pars_names, pars_fixed, daycount, state)
 	      sd_hyster500 = 240 * the_pop / 100000
 	      sd_limit650 = 335 * the_pop / 100000
 	      sd_hyster650 = 315 * the_pop / 100000
-	      if (curr_case_delta > sd_limit200 && print200==0) {
+	      if (print_debug && curr_case_delta > sd_limit200 && print200==0) {
 		 print(paste("Saw bi-weekly exceeed 200 at t=",i))
 		 print200=1
 	      }
-	      if (curr_case_delta > sd_limit350 && print350==0) {
+	      if (print_debug && curr_case_delta > sd_limit350 && print350==0) {
 		 print(paste("Saw bi-weekly exceeed 350 at t=",i))
 		 print350=1
 	      }
-	      if (curr_case_delta > sd_limit500 && print500==0) {
+	      if (print_debug && curr_case_delta > sd_limit500 && print500==0) {
 		 print(paste("Saw bi-weekly exceeed 500 at t=",i))
 		 print500=1
 	      }
-	      if (curr_case_delta > sd_limit650 && print650==0) {
+	      if (print_debug && curr_case_delta > sd_limit650 && print650==0) {
 		 print(paste("Saw bi-weekly exceeed 650 at t=",i))
 		 print650=1
 	      }
@@ -167,57 +168,72 @@ get_model_data <- function(pars, pars_names, pars_fixed, daycount, state)
 	  }
 	  else
 	  {
-	      if (i - increment < new_check_date)
+	      if (print_debug && i - increment < new_check_date)
 		  print(paste("New policy at time=",i,"saved_cum_diag=",saved_cum_diag,"saved_cum_hosp=",saved_cum_hosp,"curr_cum_diag=",curr_cum_diag,"curr_cum_hosp=",curr_cum_hosp))
 
 	      if (curr_case_delta > last_case_delta * (1 + parameters$sd_growth_trigger) &&
 		  curr_hosp_delta > last_hosp_delta * (1 + parameters$sd_growth_trigger))
 	      {
 		    tighten = 1
-		    #print(paste0("Tightening at t=",i,"..."))
+		    if (print_debug)
+			print(paste0("Tightening at t=",i,"..."))
 		    if (last_case_delta > 0)
 		    {
 			perc_inc=100*(curr_case_delta-last_case_delta)/last_case_delta
-			#print(paste0("Saw bi-weekly case increase=",perc_inc,"%"))
+	      		if (print_debug)
+			    print(paste0("Saw bi-weekly case increase=",perc_inc,"%"))
 		    }
 		    if (last_hosp_delta > 0)
 		    {
 			perc_inc=100*(curr_hosp_delta-last_hosp_delta)/last_hosp_delta
-			#print(paste0("Saw bi-weekly hosp increase=",perc_inc,"%"))
+	      		if (print_debug)
+			    print(paste0("Saw bi-weekly hosp increase=",perc_inc,"%"))
 		    }
 	      }
 	      if (curr_case_delta < last_case_delta * (1 - parameters$sd_decline_trigger) &&
 		  curr_hosp_delta < last_hosp_delta * (1 - parameters$sd_decline_trigger))
 	      {
 		    loosen = 1
-		    #print(paste0("Loosening at t=",i,"..."))
+		    if (print_debug)
+			print(paste0("Loosening at t=",i,"..."))
 		    if (last_case_delta > 0)
 		    {
 			perc_dec=100*(last_case_delta-curr_case_delta)/last_case_delta
-			#print(paste0("Saw bi-weekly case decrease=",perc_dec,"%"))
+		        if (print_debug)
+			    print(paste0("Saw bi-weekly case decrease=",perc_dec,"%"))
 		    }
 		    if (last_hosp_delta > 0)
 		    {
 			perc_dec=100*(last_hosp_delta-curr_hosp_delta)/last_hosp_delta
-			#print(paste0("Saw bi-weekly hosp decrease=",perc_dec,"%"))
+		        if (print_debug)
+			    print(paste0("Saw bi-weekly hosp decrease=",perc_dec,"%"))
 		    }
 	      }
 	  }
 	  if (tighten == 1)
 	  {
-	      #parameters$sd_inc=rep((parameters$dynamic_sd_delta/parameters$dynamic_sd_period),4)
+	      # for tightening we go straight to target over 2 weeks
 	      parameters$sd_inc=(sd_high - curr_sd)/parameters$dynamic_sd_period
-	      print(paste("tightening: rate=",curr_case_delta*100000/the_pop,"SD=",curr_sd[2],"toward high at t=",i,"sd_inc=",parameters$sd_inc[2]))
+	      if (print_debug)
+		  print(paste("tightening: rate=",curr_case_delta*100000/the_pop,"SD=",curr_sd[2],"toward high at t=",i,"sd_inc=",parameters$sd_inc[2]))
 	  }
 	  if (loosen==1)
 	  {
-	      parameters$sd_inc=rep((-parameters$dynamic_sd_delta/parameters$dynamic_sd_period),4)
-	      #parameters$sd_inc=(sd_low - curr_sd)/parameters$dynamic_sd_period
-	      print(paste("loosening: rate=",curr_case_delta*100000/the_pop,"SD=",curr_sd[2],"toward low at t=",i,"sd_inc=",parameters$sd_inc[2]))
+	      # for loosening we can go straight to target or just some fraction towards it every 2 weeks
+	      if (parameters$dynamic_sd_delta > 0)
+		  parameters$sd_inc=rep((-parameters$dynamic_sd_delta/parameters$dynamic_sd_period),4)
+	      else
+	          parameters$sd_inc=(sd_low - curr_sd)/parameters$dynamic_sd_period
+
+	      if (print_debug)
+		  print(paste("loosening: rate=",curr_case_delta*100000/the_pop,"SD=",curr_sd[2],"toward low at t=",i,"sd_inc=",parameters$sd_inc[2]))
 	  }
 	  last_case_delta = curr_cum_diag - saved_cum_diag
 	  last_hosp_delta = curr_cum_hosp - saved_cum_hosp
-	  #print(paste("At t=",i,",bi-weekly case delta=",last_case_delta,"bi-weekly hosp delta=",last_hosp_delta))
+
+	  if (print_debug)
+	      print(paste("At t=",i,",bi-weekly case delta=",last_case_delta,"bi-weekly hosp delta=",last_hosp_delta))
+
 	  saved_cum_diag = curr_cum_diag
 	  saved_cum_hosp = curr_cum_hosp
 	}
@@ -417,13 +433,18 @@ get_model_data_param_sets = function(pars_matrix, pars_names, pars_fixed, daycou
 
   pop = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   susc = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  vsusc = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   tests = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   cases = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  vcases = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   deaths = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  vdeaths = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   hosp = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   cum_hosp = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   symp = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   asymp = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  vsymp = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  vasymp = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   symp1 = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   asymp1 = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   symp2 = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
@@ -440,6 +461,11 @@ get_model_data_param_sets = function(pars_matrix, pars_names, pars_fixed, daycou
   susc_3  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   susc_4  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   
+  vsusc_1  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  vsusc_2  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  vsusc_3  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  vsusc_4  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  
   tests_1  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   tests_2  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   tests_3  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
@@ -450,10 +476,20 @@ get_model_data_param_sets = function(pars_matrix, pars_names, pars_fixed, daycou
   cases_3  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   cases_4  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   
+  vcases_1  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  vcases_2  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  vcases_3  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  vcases_4  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  
   deaths_1  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   deaths_2  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   deaths_3  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   deaths_4  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  
+  vdeaths_1  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  vdeaths_2  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  vdeaths_3  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  vdeaths_4  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   
   exp_1  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   exp_2  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
@@ -480,7 +516,6 @@ get_model_data_param_sets = function(pars_matrix, pars_names, pars_fixed, daycou
   {
     print(paste("Filling array for parameter set",i,"...."))
     out = get_model_data(pars_matrix[i,], pars_names, pars_fixed, daycount, state)
-    #print(out)
     good_ones= good_ones+1
     parameters = get_params(pars_matrix[i,], pars_names, pars_fixed)
     day0_doy = parameters$first_case_doy - parameters$delta0offset
@@ -489,14 +524,19 @@ get_model_data_param_sets = function(pars_matrix, pars_names, pars_fixed, daycou
     # first column is time
     pop[doy, good_ones] = sum_across_ages(out, "N")$all 
     susc[doy, good_ones] = sum_across_ages(out, "S")$all + sum_across_ages(out, "VEX")$all
+    vsusc[doy, good_ones] = sum_across_ages(out, "VS")$all
     tests[doy, good_ones] = sum_across_ages(out, "tot_test")$all
     cases[doy, good_ones] = sum_across_ages(out, "tot_diag")$all
+    vcases[doy, good_ones] = sum_across_ages(out, "Vcum_diag")$all
     deaths[doy, good_ones] = sum_across_ages(out, "tot_deaths")$all
+    vdeaths[doy, good_ones] = sum_across_ages(out, "VF")$all
     hosp[doy, good_ones] = sum_across_ages(out, "H")$all + sum_across_ages(out, "VH")$all
     cum_hosp[doy, good_ones] = sum_across_ages(out, "tot_hosp")$all 
 
     symp[doy, good_ones] = sum_across_ages(out, "cum_sym")$all + sum_across_ages(out, "Vcum_sym")$all
     asymp[doy, good_ones] = sum_across_ages(out, "cum_asym")$all + sum_across_ages(out, "Vcum_asym")$all
+    vsymp[doy, good_ones] = sum_across_ages(out, "Vcum_sym")$all
+    vasymp[doy, good_ones] = sum_across_ages(out, "Vcum_asym")$all
     symp1[doy, good_ones] = sum_across_ages(out, "cum_sym_")$all + sum_across_ages(out, "Vcum_sym_")$all
     asymp1[doy, good_ones] = sum_across_ages(out, "cum_asym_")$all + sum_across_ages(out, "Vcum_asym_")$all
     symp2[doy, good_ones] = sum_across_ages(out, "cum_sym2")$all + sum_across_ages(out, "Vcum_sym2")$all
@@ -516,15 +556,30 @@ get_model_data_param_sets = function(pars_matrix, pars_names, pars_fixed, daycou
     cases_3[doy, good_ones] = out[,"tot_diag_i3"]
     cases_4[doy, good_ones] = out[,"tot_diag_i4"]
     
+    vcases_1[doy, good_ones] = out[,"Vcum_diag_i1"]+ out[,"Vcum_diag2_i1"]
+    vcases_2[doy, good_ones] = out[,"Vcum_diag_i2"]+ out[,"Vcum_diag2_i2"]
+    vcases_3[doy, good_ones] = out[,"Vcum_diag_i3"]+ out[,"Vcum_diag2_i3"]
+    vcases_4[doy, good_ones] = out[,"Vcum_diag_i4"]+ out[,"Vcum_diag2_i4"]
+    
     deaths_1[doy, good_ones] = out[,"tot_deaths_i1"]
     deaths_2[doy, good_ones] = out[,"tot_deaths_i2"]
     deaths_3[doy, good_ones] = out[,"tot_deaths_i3"]
     deaths_4[doy, good_ones] = out[,"tot_deaths_i4"]
 
+    vdeaths_1[doy, good_ones] = out[,"VF_i1"] + out[,"VF2_i1"]
+    vdeaths_2[doy, good_ones] = out[,"VF_i2"] + out[,"VF2_i2"]
+    vdeaths_3[doy, good_ones] = out[,"VF_i3"] + out[,"VF2_i3"]
+    vdeaths_4[doy, good_ones] = out[,"VF_i4"] + out[,"VF2_i4"]
+
     susc_1[doy, good_ones] = out[,"S_i1"] + out[,"VEX_i1"]
     susc_2[doy, good_ones] = out[,"S_i2"] + out[,"VEX_i2"]
     susc_3[doy, good_ones] = out[,"S_i3"] + out[,"VEX_i3"]
     susc_4[doy, good_ones] = out[,"S_i4"] + out[,"VEX_i4"]
+    
+    vsusc_1[doy, good_ones] = out[,"VS_i1"]
+    vsusc_2[doy, good_ones] = out[,"VS_i2"]
+    vsusc_3[doy, good_ones] = out[,"VS_i3"]
+    vsusc_4[doy, good_ones] = out[,"VS_i4"]
     
     exp_1[doy, good_ones] = out[,"cum_exp_i1"] + out[,"Vcum_exp_i1"] + out[,"cum_exp2_i1"] + out[,"Vcum_exp2_i1"]
     exp_2[doy, good_ones] = out[,"cum_exp_i2"] + out[,"Vcum_exp_i2"] + out[,"cum_exp2_i2"] + out[,"Vcum_exp2_i2"]
@@ -547,24 +602,36 @@ get_model_data_param_sets = function(pars_matrix, pars_names, pars_fixed, daycou
     vac_4[doy, good_ones] = out[,"Vtot_i4"]
   }
   
+  vinf = vsymp + vasymp
   inf = symp + asymp
   inf1 = symp1 + asymp1
   inf2 = symp2 + asymp2
   
-  return(list(tests = tests[,1:good_ones],cases = cases[,1:good_ones], deaths = deaths[,1:good_ones],
+  return(list(tests = tests[,1:good_ones],cases = cases[,1:good_ones],vcases = vcases[,1:good_ones], 
+		deaths = deaths[,1:good_ones], vdeaths = vdeaths[,1:good_ones],
 		hosp = hosp[,1:good_ones], cum_hosp = cum_hosp[,1:good_ones],
 		symp = symp[,1:good_ones], asymp = asymp[,1:good_ones],
-		inf = inf[,1:good_ones], recov = recov[,1:good_ones], Reff=Reff[,1:good_ones],
+		inf = inf[,1:good_ones], vinf = vinf[,1:good_ones], 
+		recov = recov[,1:good_ones], Reff=Reff[,1:good_ones],
 		inf1 = inf1[,1:good_ones], inf2 = inf2[,1:good_ones],
-		pop=pop[,1:good_ones], susc=susc[,1:good_ones], vax=vax[,1:good_ones],
+		pop=pop[,1:good_ones], susc=susc[,1:good_ones], 
+		vsusc=vsusc[,1:good_ones], vax=vax[,1:good_ones],
 		tests_1 = tests_1[,1:good_ones], tests_2 = tests_2[,1:good_ones],
 		tests_3 = tests_3[,1:good_ones], tests_4 = tests_4[,1:good_ones],
 		susc_1 = susc_1[,1:good_ones], susc_2 = susc_2[,1:good_ones],
 		susc_3 = susc_3[,1:good_ones], susc_4 = susc_4[,1:good_ones],
+		vsusc_1 = vsusc_1[,1:good_ones], vsusc_2 = vsusc_2[,1:good_ones],
+		vsusc_3 = vsusc_3[,1:good_ones], vsusc_4 = vsusc_4[,1:good_ones],
 		cases_1 = cases_1[,1:good_ones], cases_2 = cases_2[,1:good_ones],
 		cases_3 = cases_3[,1:good_ones], cases_4 = cases_4[,1:good_ones],
+		vcases_1 = vcases_1[,1:good_ones], vcases_2 = vcases_2[,1:good_ones],
+		vcases_3 = vcases_3[,1:good_ones], vcases_4 = vcases_4[,1:good_ones],
 		deaths_1 = deaths_1[,1:good_ones], deaths_2 = deaths_2[,1:good_ones],
 		deaths_3 = deaths_3[,1:good_ones], deaths_4 = deaths_4[,1:good_ones],
+		exp_1 = exp_1[,1:good_ones], exp_2 = exp_2[,1:good_ones],
+		exp_3 = exp_3[,1:good_ones], exp_4 = exp_4[,1:good_ones],
+		vdeaths_1 = vdeaths_1[,1:good_ones], vdeaths_2 = vdeaths_2[,1:good_ones],
+		vdeaths_3 = vdeaths_3[,1:good_ones], vdeaths_4 = vdeaths_4[,1:good_ones],
 		exp_1 = exp_1[,1:good_ones], exp_2 = exp_2[,1:good_ones],
 		exp_3 = exp_3[,1:good_ones], exp_4 = exp_4[,1:good_ones],
 		hosp_1 = hosp_1[,1:good_ones], hosp_2 = hosp_2[,1:good_ones],

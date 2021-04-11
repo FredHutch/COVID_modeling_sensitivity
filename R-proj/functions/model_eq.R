@@ -100,6 +100,122 @@ model_eq = function(time, state, parameters, Reff = F) {
   })
 }
 
+# This function determines how the vaccinations will be allocated across age-groups
+# It can use current susc ratios: vac_dist_i = c(S_i[1]/sum(S_i),S_i[2]/sum(S_i),S_i[3]/sum(S_i),S_i[4]/sum(S_i))
+# or uses a custom mix using the vac_first age group (1=0-19, 2=20-49, 3=50-69, 4=70+)
+#
+determine_vax_dist = function(time,state,parameters)
+{
+  par <- as.list(c(state, parameters))
+    with(par, { 
+	S_i = matrix( state[S_idx], nrow = 4, ncol = 1)         # current and cumulative number of susceptible individuals
+	Vtot_i = matrix( state[Vtot_idx], nrow = 4, ncol = 1)       # cumulative number of vaccinated vacinees
+	N_i = matrix(state[age_pop_idx], nrow = 4, ncol = 1)	# total population by age
+
+	# CHANGE: 4/5/21 - vaccinate 25% of max coverage for 0-19 between 4/1 and 6/1
+	#                  vaccinate 50% of max coverage between 6/1 & 9/1 and max coverage after that
+	# Disable this by setting VacChild to 0 instead of day to do all children (0-19)
+	#
+	if (VacChild > 0)
+	{
+	    day0_doy = first_case_doy - delta0offset
+	    round1_children = VacChild16plus - day0_doy # April 1, 2021
+	    round2_children = VacChild12plus - day0_doy # June 1, 2021
+	    round3_children = VacChild - day0_doy # Sept 1, 2021
+
+	    if (time < round1_children)
+		child_vax=0
+	    else if (time >= round1_children && time < round2_children)
+		child_vax=0.25
+	    else if (time >= round2_children && time < round3_children)
+		child_vax=0.5
+	    else 
+		child_vax=1
+	}
+	else
+	    child_vax=0
+
+	# ensure we leave enough susceptibles to allow for "external exposures"
+	if (vac_mutate==1 && time > vac_mutate_time)
+	{
+	    if (expon_imports ==1)
+		new_intros = new_strain_intros*(1+(time-vac_mutate_time)/7) * the_age_prop
+	    else
+		new_intros = new_strain_intros*the_age_prop
+	}
+	else
+	    new_intros = inf_intros
+
+	vac_dist_i = c(0,0,0,0)
+
+	# The usual logic fills each age group up to the "coverage" level using 80% towards the oldest
+	# non-covered group & 10% to each of the other non-child groups
+	# for children (once started), set aside doses starting 4/1/21 in increasing amounts
+
+
+	if (vac_first != 0)
+	{
+	    if (vac_first == 4)
+	    {
+		if (S_i[4] > new_intros + 1 && Vtot_i[4] < N_i[4]*vac_coverage) {
+		    if (child_vax == 0)
+			vac_dist_i = c(0,0.1,0.1,0.8)
+		    else
+			vac_dist_i = c(0.1 * child_vax,0.1 * (2-child_vax),0.1,0.7)
+		}
+		else if (S_i[3] > new_intros + 1 && Vtot_i[3] < N_i[3]*vac_coverage) {
+		    if (child_vax == 0)
+			vac_dist_i = c(0,0.2,0.8,0)
+		    else
+			vac_dist_i = c(0.1* child_vax,0.1* (2-child_vax),0.8,0)
+		}
+		else if (S_i[2] > new_intros + 1 && Vtot_i[2] < N_i[2]*vac_coverage) {
+		    if (child_vax == 0)
+			vac_dist_i = c(0,1.0,0,0)
+		    else
+			vac_dist_i = c(0.5* child_vax,0.5* (2-child_vax),0,0)
+		}
+		else if (S_i[1] > new_intros + 1 && Vtot_i[1] < N_i[1]*vac_coverage*child_vax) {
+		    if (child_vax > 0)
+			vac_dist_i = c(1,0,0,0)
+		}
+		else
+		    vac_dist_i = c(0,0,0,0)
+	    }
+	    if (vac_first == 3)
+	    {
+		if (S_i[3] > new_intros + 1 && Vtot_i[3] < N_i[3]*vac_coverage)
+		    vac_dist_i = c(0,0.1,0.8,0.1)
+		else if (S_i[4] > new_intros + 1 && Vtot_i[4] < N_i[4]*vac_coverage)
+		    vac_dist_i = c(0,0.2,0,0.8)
+		else if (S_i[2] > new_intros + 1 && Vtot_i[2] < N_i[2]*vac_coverage) {
+		    vac_dist_i = c(0,1.0,0,0)
+		}
+	    }
+	    if (vac_first == 2)
+	    {
+		if (S_i[2] > new_intros + 1 && Vtot_i[2] < N_i[2]*vac_coverage)
+		    vac_dist_i = c(0,0.8,0.1,0.1)
+		else if (S_i[3] > new_intros + 1 && Vtot_i[3] < N_i[3]*vac_coverage)
+		    vac_dist_i = c(0,0,0.8,0.2)
+		else if (S_i[4] > new_intros + 1 && Vtot_i[4] < N_i[4]*vac_coverage) {
+		    vac_dist_i = c(0,0,0,1)
+		}
+	    }
+	}
+	else
+	{
+	    if (child_vax == 0)
+		vac_dist_i = c(0,(S_i[1]/3 + S_i[2])/sum(S_i),(S_i[1]/3 + S_i[3])/sum(S_i),(S_i[1]/3 + S_i[4])/sum(S_i))
+	    else
+		vac_dist_i = c(S_i[1]/sum(S_i),(S_i[2])/sum(S_i),(S_i[3])/sum(S_i),(S_i[4])/sum(S_i))
+	}
+
+	v_i = vac_rate * vac_dist_i
+	return (v_i)
+    })
+}
+
 model_eq_set = function(state_index, time, state, parameters, Reff = F) {
 par <- as.list(c(state, parameters))
   with(par, { 
@@ -258,66 +374,9 @@ par <- as.list(c(state, parameters))
     vac_start_day = vac_schedule[1,1] - day0_doy
     vac_stop_day = vac_stop_doy - day0_doy
     
-    # to avoid stopping vaccines abruptly and thwarting the LSODA solver, I gradually taper the
-    # vaccination rate for the last 10% of the total vaccines...
     if (vac_on && vac_rate > 0 && time >= vac_start_day && time <= vac_stop_day) 
     { 
-	if (vac_mutate==1 && time > vac_mutate_time)
-	{
-	    if (expon_imports ==1)
-		new_intros = new_strain_intros*(1+(time-vac_mutate_time)/7) * the_age_prop
-	    else
-		new_intros = new_strain_intros*the_age_prop
-	}
-	else
-	    new_intros = inf_intros
-	# vac_dist_i uses current susc ratios: vac_dist_i = c(S_i[1]/sum(S_i),S_i[2]/sum(S_i),S_i[3]/sum(S_i),S_i[4]/sum(S_i))
-	# or uses a custom mix using the vac_first age group (1=0-19, 2=20-49, 3=50-69, 4=70+)
-	# CHANGE: 1/12/21 - do NOT vaccinate age group 0-19
-	vac_dist_i = c(0,0,0,0)
-
-	if (vac_first != 0)
-	{
-	    if (vac_first == 4)
-	    {
-		if (S_i[4] > new_intros + 1 && Vtot_i[4] < N_i[4]*vac_coverage) {
-		    vac_dist_i = c(0,0.1,0.1,0.8)
-		}
-		else if (S_i[3] > new_intros + 1 && Vtot_i[3] < N_i[3]*vac_coverage) {
-		    vac_dist_i = c(0,0.2,0.8,0)
-		    #print(paste("Last batch for 70+ age group at t=",time,"S_i[4]=",S_i[4]))
-		}
-		else if (Vtot_i[2] < N_i[2]*vac_coverage) {
-		    vac_dist_i = c(0,1.0,0,0)
-		    #print(paste("Last batch for 50-69 age group at t=",time,"S_i[3]=",S_i[3]))
-		}
-	    }
-	    if (vac_first == 3)
-	    {
-		if (S_i[3] > new_intros + 1 && Vtot_i[3] < N_i[3]*vac_coverage)
-		    vac_dist_i = c(0,0.1,0.8,0.1)
-		else if (S_i[4] > new_intros + 1 && Vtot_i[4] < N_i[4]*vac_coverage)
-		    vac_dist_i = c(0,0.2,0,0.8)
-		else if (S_i[2] > new_intros + 1 && Vtot_i[2] < N_i[2]*vac_coverage) {
-		    vac_dist_i = c(0,1.0,0,0)
-		}
-	    }
-	    if (vac_first == 2)
-	    {
-		if (S_i[2] > new_intros + 1 && Vtot_i[2] < N_i[2]*vac_coverage)
-		    vac_dist_i = c(0,0.8,0.1,0.1)
-		else if (S_i[3] > new_intros + 1 && Vtot_i[3] < N_i[3]*vac_coverage)
-		    vac_dist_i = c(0,0,0.8,0.2)
-		else if (S_i[4] > new_intros + 1 && Vtot_i[4] < N_i[4]*vac_coverage) {
-		    vac_dist_i = c(0,0,0,1)
-		}
-	    }
-	}
-	else
-	    vac_dist_i = c(0,(S_i[1]/3 + S_i[2])/sum(S_i),(S_i[1]/3 + S_i[3])/sum(S_i),(S_i[1]/3 + S_i[4])/sum(S_i))
-	    # old way: vac_dist_i = c(S_i[1]/sum(S_i),S_i[2]/sum(S_i),S_i[3]/sum(S_i),S_i[4]/sum(S_i))
-
-	v_i = vac_rate * vac_dist_i
+	v_i = determine_vax_dist(time,state,parameters)
     }
     else
 	v_i = c(0,0,0,0)
