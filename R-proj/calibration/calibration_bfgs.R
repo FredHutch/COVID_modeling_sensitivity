@@ -15,6 +15,8 @@
 library(lubridate)
 library(mco)
 
+setwd("..")	# run in the R-proj directory
+
 source("covid-model.R")
 
 # Read in King County actual data for calibration ####
@@ -135,7 +137,7 @@ print(paste("death error",sse[2],sep='='))
 print(paste("daily hosp error",sse[3],sep='='))
 print(paste("score",sse[1]+sse[2]+sse[3],sep='='))
 
-pdf(paste0("calib/initial_fit_",suffix,".pdf"), width = 10, height = 5)
+pdf(paste0("calibration/initial_fit_",suffix,".pdf"), width = 10, height = 5)
 plot_calibration_params(unlist(params_kc), names(params_kc), params_fix, the_data_calib, kc_age_t,end_day, state)
 plot_age_case_fit(unlist(params_kc), names(params_kc), params_fix, the_data_calib, kc_age_t, end_day, state)
 plot_age_death_fit(unlist(params_kc), names(params_kc), params_fix, the_data_calib, kc_age_t, end_day, state)
@@ -180,7 +182,7 @@ print(paste("score",sse[1]+sse[2]+sse[3],sep='='))
 score_bfgs = sse[1]+sse[2]+sse[3]
 
 # plot the parameter outcome that has the lowest mean squared error against actuals (cases and deaths)
-pdf(paste0("calib/",suffix,".pdf"), width = 10, height = 5)
+pdf(paste0("calibration/",suffix,".pdf"), width = 10, height = 5)
 plot_calibration_params(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,end_day, state)
 plot_age_case_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
 plot_age_death_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
@@ -188,8 +190,8 @@ plot_age_hosp_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,
 dev.off()
 
 params_fix = get_params(res$par, names(res$par), params_fix)
-save(params_fix,res, file = paste0("calib/res_test_",suffix,".Rdata"))
-#load(file = paste0("calib/res_test_",suffix,".Rdata"))
+save(params_fix,res, file = paste0("calibration/res_test_",suffix,".Rdata"))
+#load(file = paste0("calibration/res_test_",suffix,".Rdata"))
 
 # When moving to the next fitting period, our starting settings for rhoS, SD, h_i & cfr are those of the previous month
 
@@ -281,7 +283,7 @@ print(paste("score",sse[1]+sse[2]+sse[3],sep='='))
 score_bfgs = sse[1]+sse[2]+sse[3]
 
 # plot the parameter outcome that has the lowest mean squared error against actuals (cases and deaths)
-pdf(paste0("calib/",suffix,".pdf"), width = 10, height = 5)
+pdf(paste0("calibration/",suffix,".pdf"), width = 10, height = 5)
 plot_calibration_params(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,end_day, state)
 plot_age_case_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
 plot_age_death_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
@@ -289,7 +291,7 @@ plot_age_hosp_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,
 dev.off()
 
 params_fix = get_params(res$par, names(res$par), params_fix)
-save(params_fix,res, file = paste0("calib/res_test_",suffix,".Rdata"))
+save(params_fix,res, file = paste0("calibration/res_test_",suffix,".Rdata"))
 
 params_kc <- list(rho_S3_1 = params_fix$rho_S2_1,                  # Relative testing rate of susceptibles
 		  rho_S3_2 = params_fix$rho_S2_2, 
@@ -379,7 +381,7 @@ print(paste("score",sse[1]+sse[2]+sse[3],sep='='))
 score_bfgs = sse[1]+sse[2]+sse[3]
 
 # plot the parameter outcome that has the lowest mean squared error against actuals (cases and deaths)
-pdf(paste0("calib/",suffix,".pdf"), width = 10, height = 5)
+pdf(paste0("calibration/",suffix,".pdf"), width = 10, height = 5)
 plot_calibration_params(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,end_day, state)
 plot_age_case_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
 plot_age_death_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
@@ -387,7 +389,7 @@ plot_age_hosp_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,
 dev.off()
 
 params_fix = get_params(res$par, names(res$par), params_fix)
-save(params_fix,res, file = paste0("calib/res_test_",suffix,".Rdata"))
+save(params_fix,res, file = paste0("calibration/res_test_",suffix,".Rdata"))
 
 params_kc <- list(rho_S4_1 = params_fix$rho_S3_1,                  # Relative testing rate of susceptibles
 		  rho_S4_2 = params_fix$rho_S3_2, 
@@ -476,14 +478,14 @@ print(paste("score",sse[1]+sse[2]+sse[3],sep='='))
 score_bfgs = sse[1]+sse[2]+sse[3]
 
 # plot the parameter outcome that has the lowest mean squared error against actuals (cases and deaths)
-pdf(paste0("calib/",suffix,".pdf"), width = 10, height = 5)
+pdf(paste0("calibration/",suffix,".pdf"), width = 10, height = 5)
 plot_calibration_params(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,end_day, state)
 plot_age_case_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
 plot_age_death_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
 plot_age_hosp_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
 dev.off()
 params_fix = get_params(res$par, names(res$par), params_fix)
-save(params_fix,res, file = paste0("calib/res_test_",suffix,".Rdata"))
+save(params_fix,res, file = paste0("calibration/res_test_",suffix,".Rdata"))
 
 params_kc <- list(rho_S5_1 = params_fix$rho_S4_1,                  # Relative testing rate of susceptibles
 		  rho_S5_2 = params_fix$rho_S4_2, 
@@ -572,7 +574,7 @@ print(paste("score",sse[1]+sse[2]+sse[3],sep='='))
 score_bfgs = sse[1]+sse[2]+sse[3]
 
 # plot the parameter outcome that has the lowest mean squared error against actuals (cases and deaths)
-pdf(paste0("calib/",suffix,".pdf"), width = 10, height = 5)
+pdf(paste0("calibration/",suffix,".pdf"), width = 10, height = 5)
 plot_calibration_params(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,end_day, state)
 plot_age_case_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
 plot_age_death_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
@@ -580,7 +582,7 @@ plot_age_hosp_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,
 dev.off()
 
 params_fix = get_params(res$par, names(res$par), params_fix)
-save(params_fix,res, file = paste0("calib/res_test_",suffix,".Rdata"))
+save(params_fix,res, file = paste0("calibration/res_test_",suffix,".Rdata"))
 
 params_kc <- list(rho_S6_1 = params_fix$rho_S5_1,                  # Relative testing rate of susceptibles
 		  rho_S6_2 = params_fix$rho_S5_2, 
@@ -669,7 +671,7 @@ print(paste("score",sse[1]+sse[2]+sse[3],sep='='))
 score_bfgs = sse[1]+sse[2]+sse[3]
 
 # plot the parameter outcome that has the lowest mean squared error against actuals (cases and deaths)
-pdf(paste0("calib/",suffix,".pdf"), width = 10, height = 5)
+pdf(paste0("calibration/",suffix,".pdf"), width = 10, height = 5)
 plot_calibration_params(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,end_day, state)
 plot_age_case_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
 plot_age_death_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
@@ -677,7 +679,7 @@ plot_age_hosp_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,
 dev.off()
 
 params_fix = get_params(res$par, names(res$par), params_fix)
-save(params_fix,res, file = paste0("calib/res_test_",suffix,".Rdata"))
+save(params_fix,res, file = paste0("calibration/res_test_",suffix,".Rdata"))
 
 params_kc <- list(rho_S7_1 = params_fix$rho_S6_1,                  # Relative testing rate of susceptibles
 		  rho_S7_2 = params_fix$rho_S6_2, 
@@ -766,7 +768,7 @@ print(paste("score",sse[1]+sse[2]+sse[3],sep='='))
 score_bfgs = sse[1]+sse[2]+sse[3]
 
 # plot the parameter outcome that has the lowest mean squared error against actuals (cases and deaths)
-pdf(paste0("calib/",suffix,".pdf"), width = 10, height = 5)
+pdf(paste0("calibration/",suffix,".pdf"), width = 10, height = 5)
 plot_calibration_params(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,end_day, state)
 plot_age_case_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
 plot_age_death_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
@@ -774,7 +776,7 @@ plot_age_hosp_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,
 dev.off()
 
 params_fix = get_params(res$par, names(res$par), params_fix)
-save(params_fix,res, file = paste0("calib/res_test_",suffix,".Rdata"))
+save(params_fix,res, file = paste0("calibration/res_test_",suffix,".Rdata"))
 
 params_kc <- list(rho_S8_1 = params_fix$rho_S7_1,                  # Relative testing rate of susceptibles
 		  rho_S8_2 = params_fix$rho_S7_2, 
@@ -863,7 +865,7 @@ print(paste("score",sse[1]+sse[2]+sse[3],sep='='))
 score_bfgs = sse[1]+sse[2]+sse[3]
 
 # plot the parameter outcome that has the lowest mean squared error against actuals (cases and deaths)
-pdf(paste0("calib/",suffix,".pdf"), width = 10, height = 5)
+pdf(paste0("calibration/",suffix,".pdf"), width = 10, height = 5)
 plot_calibration_params(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,end_day, state)
 plot_age_case_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
 plot_age_death_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
@@ -871,7 +873,7 @@ plot_age_hosp_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,
 dev.off()
 
 params_fix = get_params(res$par, names(res$par), params_fix)
-save(params_fix,res, file = paste0("calib/res_test_",suffix,".Rdata"))
+save(params_fix,res, file = paste0("calibration/res_test_",suffix,".Rdata"))
 
 params_kc <- list(rho_S9_1 = params_fix$rho_S8_1,                  # Relative testing rate of susceptibles
 		  rho_S9_2 = params_fix$rho_S8_2, 
@@ -960,7 +962,7 @@ print(paste("score",sse[1]+sse[2]+sse[3],sep='='))
 score_bfgs = sse[1]+sse[2]+sse[3]
 
 # plot the parameter outcome that has the lowest mean squared error against actuals (cases and deaths)
-pdf(paste0("calib/",suffix,".pdf"), width = 10, height = 5)
+pdf(paste0("calibration/",suffix,".pdf"), width = 10, height = 5)
 plot_calibration_params(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,end_day, state)
 plot_age_case_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
 plot_age_death_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t, end_day, state)
@@ -968,4 +970,4 @@ plot_age_hosp_fit(res$par, names(res$par), params_fix, the_data_calib, kc_age_t,
 dev.off()
 
 params_fix = get_params(res$par, names(res$par), params_fix)
-save(params_fix,res, file = paste0("calib/res_test_",suffix,".Rdata"))
+save(params_fix,res, file = paste0("calibration/res_test_",suffix,".Rdata"))
