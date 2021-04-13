@@ -233,9 +233,11 @@ par <- as.list(c(state, parameters))
 
     Tests = monthly_interpolation(time,parameters,Tests1,Tests2,Tests3,Tests4,Tests5,Tests6,Tests7,Tests8,Tests9,Tests10)
 
+    #print(paste("time=",time,"Tests=(",Tests[1],",",Tests[2],",",Tests[3],",",Tests[4],")"))
     Testing_Pop = rho_A * (A1_i + P1_i + A2_i + P2_i + VA1_i + VP1_i + VA2_i + VP2_i) + 
 		    rho_S * (S_i + E1_i + E2_i + VS_i + VE1_i + VE2_i) +  
 			I1_i + I2_i + VI1_i + VI2_i
+    #print(paste("time=",time,"Testing_Pop=(",Testing_Pop[1],",",Testing_Pop[2],",",Testing_Pop[3],",",Testing_Pop[4],")"))
 
     d_i = c(0,0,0,0)
     for (i in 1:4) {
@@ -255,8 +257,9 @@ calc_vax_rate = function(time, parameters) {
 	day0_doy = first_case_doy - delta0offset
 
 	vac_segments=nrow(vac_schedule)
-	if (vac_segments == 0)
-	    return(0)
+
+	if (vac_segments <= 1)
+	    return(vac_final_rate)
 
 	start_time<-vector(length=vac_segments-1)
 	end_time<-vector(length=vac_segments-1)
