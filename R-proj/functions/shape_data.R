@@ -456,6 +456,11 @@ get_model_data_param_sets = function(pars_matrix, pars_names, pars_fixed, daycou
   Reff = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   vax = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   
+  pop_1  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  pop_2  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  pop_3  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  pop_4  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
+  
   susc_1  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   susc_2  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
   susc_3  = matrix(NA, nrow = length(calendar_time), ncol = nrow(pars_matrix))
@@ -546,6 +551,11 @@ get_model_data_param_sets = function(pars_matrix, pars_names, pars_fixed, daycou
     Reff[doy, good_ones] = out[,"Reff"]
     vax[doy, good_ones] = sum_across_ages(out,"Vtot")$all
     
+    pop_1[doy, good_ones] = out[,"N_i1"]
+    pop_2[doy, good_ones] = out[,"N_i2"]
+    pop_3[doy, good_ones] = out[,"N_i3"]
+    pop_4[doy, good_ones] = out[,"N_i4"]
+    
     tests_1[doy, good_ones] = out[,"tot_tests_i1"]
     tests_2[doy, good_ones] = out[,"tot_tests_i2"]
     tests_3[doy, good_ones] = out[,"tot_tests_i3"]
@@ -616,6 +626,8 @@ get_model_data_param_sets = function(pars_matrix, pars_names, pars_fixed, daycou
 		inf1 = inf1[,1:good_ones], inf2 = inf2[,1:good_ones],
 		pop=pop[,1:good_ones], susc=susc[,1:good_ones], 
 		vsusc=vsusc[,1:good_ones], vax=vax[,1:good_ones],
+		pop_1 = pop_1[,1:good_ones], pop_2 = pop_2[,1:good_ones],
+		pop_3 = pop_3[,1:good_ones], pop_4 = pop_4[,1:good_ones],
 		tests_1 = tests_1[,1:good_ones], tests_2 = tests_2[,1:good_ones],
 		tests_3 = tests_3[,1:good_ones], tests_4 = tests_4[,1:good_ones],
 		susc_1 = susc_1[,1:good_ones], susc_2 = susc_2[,1:good_ones],
