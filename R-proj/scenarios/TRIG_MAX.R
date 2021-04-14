@@ -14,16 +14,16 @@ scen<-"TRIG_MAX"
 p_eff<-0
 min_sd<-0.2
 max_sd<-0.6
-rate<-8000
+rate<-10000
 prior_group<-4
 trig_min<-100
 sd_delta = 0.1
 
-vac_coverage=0.94
+vac_coverage=0.95
 
 #default b117 strain characteristics, but generic 90% Vsusc efficacy of vaccine
-new_strain_intros=3
-new_strain_severity = 1.6
+new_strain_intros=0.25
+new_strain_severity = 1.55
 new_strain_fact<-1.55 # relative strength of 2nd strain
 
 new_check_date=0 # No switch from case triggers to percent change in cases/hospitalizations
@@ -44,6 +44,10 @@ calib_params$beta_d_fact= 0.5
 
 calib_params$vac_final_rate = as.numeric(rate)		# this one will be adopted after vac_schedule ends
 calib_params$severity = 1
+
+calib_params$VacChild16plus = 730+yday(ymd("2021-04-1")) # April 1, 2022 (pushed out to turn off!)
+calib_params$VacChild12plus = 730+yday(ymd("2021-06-1")) # June 1, 2022 (pushed out to turn off!)
+calib_params$VacChild = 730+yday(ymd("2021-09-1")) # Sept 1, 2022 (pushed out to turn off!)
 
 calib_params$dynamic_sd = T
 calib_params$sd_trans = 14
@@ -80,11 +84,11 @@ int_rampup = 14				      # Time to achieve full intervention effect
 vac_rate = as.numeric(rate)
 vac_first = as.numeric(prior_group)
 
-vac_eff_pi1 = 0.1
+vac_eff_pi1 = 0.95
 vac_eff_susc1 = 0.9
 vac_eff_inf1 = 0.1
-vac_eff_pi2 = 0.1
-vac_eff_susc2 = 0.9
+vac_eff_pi2 = 0.86
+vac_eff_susc2 = 0.8
 vac_eff_inf2 = 0.1
 
 vac_exp_rate = 0
