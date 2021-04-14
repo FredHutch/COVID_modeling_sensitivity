@@ -11,7 +11,7 @@ write(header,file="unsorted_hosp.csv",append=FALSE)
 
 for (i in 1:nrow(kc_data)) {
   doy=0
-  if (substr(kc_data$admitdate[i],1,3)=="202")
+  if (kc_data$admitdate[i] != "" && substr(kc_data$admitdate[i],1,3)=="202")
     doy = kc_data$admitdate[i]
   if (doy != 0) {
     write(paste(doy,kc_data$AGE_YEARS[i],sep=","),file="unsorted_hosp.csv",append=TRUE)

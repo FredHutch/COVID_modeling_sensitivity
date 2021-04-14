@@ -10,10 +10,10 @@ write(header,file="unsorted_death.csv",append=FALSE)
 
 for (i in 1:nrow(kc_data)) {
   doy=0
-  if (substr(kc_data$DEATH_DATE[i],1,3)=="202" && kc_data$CovidDeath[i] == "Yes")
+  if (kc_data$DEATH_DATE[i] != "" && substr(kc_data$DEATH_DATE[i],1,3)=="202" && kc_data$CovidDeath[i] == "Yes")
     doy = kc_data$DEATH_DATE[i]
   if (doy != 0) {
-    if (substr(kc_data$admitdate[i],1,3)=="202") {
+    if (kc_data$admitdate[i] != "" && substr(kc_data$admitdate[i],1,3)=="202") {
 	write(paste(doy,kc_data$AGE_YEARS[i],1,sep=","),file="unsorted_death.csv",append=TRUE)
     } else {
 	write(paste(doy,kc_data$AGE_YEARS[i],0,sep=","),file="unsorted_death.csv",append=TRUE)

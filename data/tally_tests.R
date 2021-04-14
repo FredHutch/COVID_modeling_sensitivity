@@ -13,10 +13,10 @@ write(header,file="unsorted_tests.csv",append=FALSE)
 
 for (i in 1:nrow(kc_data)) {
   doy=0
-  if (substr(kc_data$CDC_EVENT_DATE_SARS[i],1,3)=="202")
+  if (kc_data$CDC_EVENT_DATE_SARS[i] != "" && substr(kc_data$CDC_EVENT_DATE_SARS[i],1,3)=="202")
     #doy = yday(ymd(kc_data$CDC_EVENT_DATE_SARS[i]))
     doy = kc_data$CDC_EVENT_DATE_SARS[i]
-  else if (substr(kc_data$CREATE_DATE[i],1,3)=="202")
+  else if (kc_data$CREATE_DATE[i] != "" && substr(kc_data$CREATE_DATE[i],1,3)=="202")
     #doy = yday(ymd(kc_data$CREATE_DATE[i]))
     doy = kc_data$CREATE_DATE[i]
   if (doy != 0) {
