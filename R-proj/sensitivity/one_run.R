@@ -1,5 +1,6 @@
 set.seed(20)
 print_legend = 0
+setwd("..") # run from R-proj directory
 
 source("covid-model.R")
 source("kc_read-data.R")
@@ -20,22 +21,21 @@ min_sd<-args[8] # how far to relax SD
 max_sd<-args[9] # how far to relax SD
 trig_min<-args[10] # bi-weekly case rate per 100k pop for loosening SD
 trig_max<-args[11] # bi-weekly case rate per 100k pop for tightening SD
-trig_perc<- args[12] # bi-weekly case/hosp percentage change (percent)
-cover<- args[13] # age-group vax coverage (fraction)
-imports<- args[14] # daily new mutation imports
+cover<- args[12] # age-group vax coverage (fraction)
+imports<- args[13] # daily new mutation imports
 
 plot_em<-0
 
-#if (trig_perc == 0)
-new_check_date=730+yday(ymd("2021-01-15")) # date for switch from case triggers to percent change in cases/hospitalizations
+new_check_date=0 # no switch from case triggers to percent change in cases/hospitalizations
 
 vac_coverage=as.numeric(cover)
 new_strain_intros=as.numeric(imports)
+new_strain_severity<-1.55 # impact on hosp & death vs main variant
+
 vac_exp_rate=0
-mut_indep = 1
 
 # read in calibration fit parameters (representing all calib months)
-result_file="calib/res_test_Oct_King.Rdata"
+result_file="calibration/res_test_dec_fit.Rdata"
 
 intervention_day = yday(ymd("2020-5-15"))     # Start of intervention protocol
 int_rampup = 14				      # Time to achieve full intervention effect
@@ -58,11 +58,13 @@ calib_params$dynamic_sd_max_snrs = as.numeric(max_sd) + 0.2
 calib_params$sd_inc=c(0,0,0,0)
 calib_params$dynamic_sd_limit = ((as.numeric(trig_min) + as.numeric(trig_max))/2) * the_pop / 100000
 calib_params$dynamic_sd_hyster = ((as.numeric(trig_max) - as.numeric(trig_min))/2) * the_pop / 100000
-sd_growth_trigger=as.numeric(trig_perc)/100	# % growth as tighten trigger
-sd_decline_trigger=as.numeric(trig_perc)/100 	# % decline as loosen trigger
 
+calib_params$severity = 1
 
-#calib_params$sd2 = c(calib_params$sd2_1,calib_params$sd2_2,calib_params$sd2_3,calib_params$sd2_4)
+#Turn off all childhood vaccinations (0-19)
+calib_params$VacChild16plus = 0
+calib_params$VacChild12plus = 0
+calib_params$VacChild = 0
 
 # this loads the vaccination parameters
 
@@ -78,7 +80,7 @@ interventions_abbr = row.names(interventions)
 int_rampup = 14				      # Time to achieve full intervention effect
 
 vac_eff_hi = 0
-vac_rate = as.numeric(rate)
+vac_final_rate = as.numeric(rate)
 vac_first = as.numeric(prior_group)
 vac_eff_inf = as.numeric(vei)
 vac_eff_pi = as.numeric(vep)
@@ -101,29 +103,25 @@ vac_mutate_time=366+yday(ymd("2021-1-01"))
 
 end_day = 370+vac_init_doy
 
-calib_doy = yday(ymd("2020-10-31"))     # End of model calibration
+calib_doy = yday(ymd("2020-12-31"))     # End of model calibration
+calib_params$calib_doy = calib_doy
 
-suffix=paste0(dist,"_vei_",vei,"_ves_",ves,"_vep_",vep,"_sdmin_",min_sd,"_sdmax_",max_sd,"_rate_",rate,"_mut_",new_strain_fact,"_trigmin_",trig_min,"_trigmax_",trig_max,"_trigperc_",trig_perc,"_cover_",cover,"_import_",imports)
+suffix=paste0(dist,"_vei_",vei,"_ves_",ves,"_vep_",vep,"_sdmin_",min_sd,"_sdmax_",max_sd,"_rate_",rate,"_mut_",new_strain_fact,"_trigmin_",trig_min,"_trigmax_",trig_max,"_cover_",cover,"_import_",imports)
 print(suffix)
-
-state[sd_adj_idx] = calib_params$sd7_1                  # Social distancing (relaxed fit by age) 
-state[sd_adj_idx+1] = calib_params$sd7_2
-state[sd_adj_idx+2] = calib_params$sd7_3
-state[sd_adj_idx+3] = calib_params$sd7_4
 
 if (plot_em == 0)
 {
     scenarios_out = get_model_data_param_sets(interventions, int_param_names, calib_params, end_day, state)
-    saveRDS(scenarios_out, file = paste0("../sens_data/",suffix,".rds"))
+    saveRDS(scenarios_out, file = paste0("sens_data/",suffix,".rds"))
     quit()
 } else {
-    scenarios_out=readRDS(file = paste0("../sens_data/",suffix,".rds"))
+    scenarios_out=readRDS(file = paste0("sens_data/",suffix,".rds"))
 }
 
 cols = c("black","red")
 
 x_lim = NULL
-#setwd("shiny_out")
+setwd("sens_out")
 
 pdf(paste0("daily_cases_",suffix,".pdf"), width = 5, height = 3.5)
 x_lim = NULL

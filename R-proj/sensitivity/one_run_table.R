@@ -1,3 +1,5 @@
+setwd("..") # run in R-proj directory
+
 source("covid-model.R")
 source("kc_read-data.R")
 
@@ -15,9 +17,8 @@ min_sd<-args[7] # how far to relax SD
 max_sd<-args[8] # how far to relax SD
 trig_min<-args[9] # bi-weekly case rate per 100k pop for loosening SD
 trig_max<-args[10] # bi-weekly case rate per 100k pop for tightening SD
-trig_perc<-args[11] # bi-weekly case & hosp rate percent rise/drop to tighten/loosen SD (after "new_check_date")
-cover<- args[12] # age-group vax coverage (fraction)
-imports<- args[13] # daily new mutation imports
+cover<- args[11] # age-group vax coverage (fraction)
+imports<- args[12] # daily new mutation imports
 
 vac_exp_rate=0
 
@@ -33,7 +34,7 @@ interventions_abbr = row.names(interventions)
 
 int_rampup = 14				      # Time to achieve full intervention effect
 
-vac_rate = as.numeric(rate)
+vac_final_rate = as.numeric(rate)
 
 vac_eff_inf1 = vac_eff_inf
 vac_eff_inf2 = vac_eff_inf
@@ -44,10 +45,9 @@ vac_stop_doy = 366 + yday(ymd("2021-12-31"))     # End of vaccination protocol
 vac_mutate=1
 vac_mutate_time=366+yday(ymd("2021-1-01"))
 
+suffix=paste0(dist,"_vei_",vei,"_ves_",ves,"_vep_",vep,"_sdmin_",min_sd,"_sdmax_",max_sd,"_rate_",rate,"_mut_",new_strain_fact,"_trigmin_",trig_min,"_trigmax_",trig_max,"_cover_",cover,"_import_",imports)
 
-suffix=paste0(dist,"_vei_",vei,"_ves_",ves,"_vep_",vep,"_sdmin_",min_sd,"_sdmax_",max_sd,"_rate_",rate,"_mut_",new_strain_fact,"_trigmin_",trig_min,"_trigmax_",trig_max,"_trigperc_",trig_perc,"_cover_",cover,"_import_",imports)
-
-infile=paste0("../sens_data/",suffix,".rds")
+infile=paste0("sens_data/",suffix,".rds")
 print(paste("Input file=",infile))
 outfile=paste0("sens_out/",suffix,".csv")
 print(paste("Output file=",outfile))
@@ -225,7 +225,7 @@ base_results$min_Reff = c(signif(calc_min_current(scenarios_base$Reff, 1, start_
 base_results$avg_Reff = c(signif(calc_avg_current(scenarios_base$Reff, 1, start_idx)[1],2),
                                   signif(calc_avg_current(scenarios_base$Reff, start_idx, end_idx),2))
 
-write("scenario,min_sd,max_sd,ve_s,ve_p,ve_i,vac_rate,new_strain_fact,loosen,tighten,trig_perc,coverage,import rate,cases since vax,%case reduct,max daily cases,hosp since vax,%hosp reduct,max current hosp,deaths since vax,%death reduct,max daily deaths,avg SD,avg child SD,days at max SD,%reduct days at max,max Reff,min Reff, avg Reff,tot cases,tot hosp,tot deaths,tot infs", file = outfile, append=FALSE)
+write("scenario,min_sd,max_sd,ve_s,ve_p,ve_i,vac_rate,new_strain_fact,loosen,tighten,coverage,import rate,cases since vax,%case reduct,max daily cases,hosp since vax,%hosp reduct,max current hosp,deaths since vax,%death reduct,max daily deaths,avg SD,avg child SD,days at max SD,%reduct days at max,max Reff,min Reff, avg Reff,tot cases,tot hosp,tot deaths,tot infs", file = outfile, append=FALSE)
 for (i in 1:nrow(base_results))
 {
     ve_s=0
@@ -251,7 +251,7 @@ for (i in 1:nrow(base_results))
 	scen_name = dist
 	scen_name = gsub (",", " ", scen_name)
     }
-    write(paste(scen_name,min_sd,max_sd,ve_s,ve_p,ve_i,vrate,new_strain_fact,trig_min,trig_max,trig_perc,cover,imports,
+    write(paste(scen_name,min_sd,max_sd,ve_s,ve_p,ve_i,vrate,new_strain_fact,trig_min,trig_max,cover,imports,
 	base_results$new_cases[i],base_results$case_reduct[i],base_results$max_daily_cases[i],
 	base_results$new_hosp[i],base_results$hosp_reduct[i],base_results$max_current_hosp[i],
 	base_results$new_deaths[i],base_results$death_reduct[i],base_results$max_daily_deaths[i],
