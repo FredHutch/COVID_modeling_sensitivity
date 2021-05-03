@@ -31,15 +31,15 @@ my $vac_rate_max= 15000;
 my $vac_rate_range= $vac_rate_max - $vac_rate_min;
 
 my $vac_eff_p_min= 0.1;
-my $vac_eff_p_max= 1.0;
+my $vac_eff_p_max= 0.9;
 my $vac_eff_p_range= $vac_eff_p_max - $vac_eff_p_min;
 
 my $vac_eff_i_min= 0.1;
-my $vac_eff_i_max= 1.0;
+my $vac_eff_i_max= 0.9;
 my $vac_eff_i_range= $vac_eff_i_max - $vac_eff_i_min;
 
 my $vac_eff_s_min= 0.1;
-my $vac_eff_s_max= 1.0;
+my $vac_eff_s_max= 0.9;
 my $vac_eff_s_range= $vac_eff_s_max - $vac_eff_s_min;
 
 my $sd_lower_min= 0;
@@ -66,9 +66,17 @@ my $coverage_min= 0.6;
 my $coverage_max= 1;
 my $coverage_range= $coverage_max - $coverage_min;
 
-my $imports_min= 0.05;
-my $imports_max= 1.25;
+my $imports_min= 0.25;
+my $imports_max= 2;
 my $imports_range= $imports_max - $imports_min;
+
+my $sev_inf_min= 1;
+my $sev_inf_max= 1.75;
+my $sev_inf_range= $sev_inf_max - $sev_inf_min;
+
+my $sd_delta_min= 0.1;
+my $sd_delta_max= 0.4;
+my $sd_delta_range= $sd_delta_max - $sd_delta_min;
 
 system("rm -f sens_$inpfile");
 
@@ -86,17 +94,19 @@ while( $line=<INP>) {
     my $mut_inf = int(1000 * ($mut_inf_range * $pieces[8] + $mut_inf_min)+0.5)/1000.0;
     my $coverage = int(1000 * ($coverage_range * $pieces[9] + $coverage_min)+0.5)/1000.0;
     my $imports = int(1000 * ($imports_range * $pieces[10] + $imports_min)+0.5)/1000.0;
+    my $sev_inf = int(1000 * ($sev_inf_range * $pieces[11] + $sev_inf_min)+0.5)/1000.0;
+    my $sd_delta = int(1000 * ($sd_delta_range * $pieces[12] + $sd_delta_min)+0.5)/1000.0;
 
-    my $rds_file="../sens_data/$dist\_vei_$vac_eff_i\_ves_$vac_eff_s\_vep_$vac_eff_p\_sdmin_$sd_lower\_sdmax_$sd_upper\_rate_$vac_rate\_mut_$mut_inf\_trigmin_$sd_loosen\_trigmax_$sd_tighten\_cover_$coverage\_import_$imports\.rds";
+    my $rds_file="../sens_data/$dist\_vei_$vac_eff_i\_ves_$vac_eff_s\_vep_$vac_eff_p\_sdmin_$sd_lower\_sdmax_$sd_upper\_rate_$vac_rate\_mut_$mut_inf\_trigmin_$sd_loosen\_trigmax_$sd_tighten\_cover_$coverage\_import_$imports\_sever_$sev_inf\_sddelta_$sd_delta\.rds";
     print("Filename: $rds_file\n");
 
     if (! -e $rds_file) {
-	print("Running: Rscript one_run.R $dist $age_code $vac_eff_i $vac_eff_s $vac_eff_p $vac_rate $mut_inf $sd_lower $sd_upper $sd_loosen $sd_tighten $coverage $imports\n");
-	system("Rscript one_run.R $dist $age_code $vac_eff_i $vac_eff_s $vac_eff_p $vac_rate $mut_inf $sd_lower $sd_upper $sd_loosen $sd_tighten $coverage $imports");
+	print("Running: Rscript one_run.R $dist $age_code $vac_eff_i $vac_eff_s $vac_eff_p $vac_rate $mut_inf $sd_lower $sd_upper $sd_loosen $sd_tighten $coverage $imports $sev_inf $sd_delta\n");
+	system("Rscript one_run.R $dist $age_code $vac_eff_i $vac_eff_s $vac_eff_p $vac_rate $mut_inf $sd_lower $sd_upper $sd_loosen $sd_tighten $coverage $imports $sev_inf $sd_delta");
     } else {
 	print "Skipped creation of $rds_file\n";
     }
-    system("Rscript one_run_table.R $dist $vac_eff_i $vac_eff_s $vac_eff_p $vac_rate $mut_inf $sd_lower $sd_upper $sd_loosen $sd_tighten $coverage $imports");
-    system("tail -n 1 ../sens_out/$dist\_vei_$vac_eff_i\_ves_$vac_eff_s\_vep_$vac_eff_p\_sdmin_$sd_lower\_sdmax_$sd_upper\_rate_$vac_rate\_mut_$mut_inf\_trigmin_$sd_loosen\_trigmax_$sd_tighten\_cover_$coverage\_import_$imports\.csv >> sens_$inpfile");
+    system("Rscript one_run_table.R $dist $vac_eff_i $vac_eff_s $vac_eff_p $vac_rate $mut_inf $sd_lower $sd_upper $sd_loosen $sd_tighten $coverage $imports $sev_inf $sd_delta");
+    system("tail -n 1 ../sens_out/$dist\_vei_$vac_eff_i\_ves_$vac_eff_s\_vep_$vac_eff_p\_sdmin_$sd_lower\_sdmax_$sd_upper\_rate_$vac_rate\_mut_$mut_inf\_trigmin_$sd_loosen\_trigmax_$sd_tighten\_cover_$coverage\_import_$imports\_sever_$sev_inf\_sddelta_$sd_delta\.csv >> sens_$inpfile");
 }
 close(INP);

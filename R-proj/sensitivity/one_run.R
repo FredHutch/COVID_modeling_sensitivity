@@ -7,7 +7,8 @@ source("kc_read-data.R")
 
 #Settings used in all scenarios (for now)
 #max_sd<-0.6	# how far to tighten SD
-sd_delta = 0.1 # how slowly to relax SD
+#Rscript one_run.R $dist $age_code $vac_eff_i $vac_eff_s $vac_eff_p $vac_rate $mut_inf $sd_lower $sd_upper $sd_loosen $sd_tighten $coverage $imports $sev_inf $sd_delta
+
 
 args<-commandArgs(trailingOnly=T)
 dist<-args[1] # example: prop, adults, seniors
@@ -23,6 +24,8 @@ trig_min<-args[10] # bi-weekly case rate per 100k pop for loosening SD
 trig_max<-args[11] # bi-weekly case rate per 100k pop for tightening SD
 cover<- args[12] # age-group vax coverage (fraction)
 imports<- args[13] # daily new mutation imports
+severity<- args[14] # new mutation increase in severity
+sd_delta<- args[15] # how slowly to relax SD
 
 plot_em<-0
 
@@ -30,7 +33,7 @@ new_check_date=0 # no switch from case triggers to percent change in cases/hospi
 
 vac_coverage=as.numeric(cover)
 new_strain_intros=as.numeric(imports)
-new_strain_severity<-1.55 # impact on hosp & death vs main variant
+new_strain_severity<-as.numeric(severity) # impact on hosp & death vs main variant
 
 vac_exp_rate=0
 
@@ -66,7 +69,10 @@ calib_params$VacChild16plus = 0
 calib_params$VacChild12plus = 0
 calib_params$VacChild = 0
 
-# this loads the vaccination parameters
+# Nix KC vaccine schedule!
+vac_schedule = matrix(c(366+yday(ymd("2021-1-1")),0,     # Start of vaccination protection (1st point)
+     366+yday(ymd("2021-1-15")),0),     # vaccination protection (2nd point)
+                       byrow = TRUE, nrow = 2)
 
 int_param_names = c("vac_on")
 interventions = matrix(c(0, 1),
@@ -106,7 +112,7 @@ end_day = 370+vac_init_doy
 calib_doy = yday(ymd("2020-12-31"))     # End of model calibration
 calib_params$calib_doy = calib_doy
 
-suffix=paste0(dist,"_vei_",vei,"_ves_",ves,"_vep_",vep,"_sdmin_",min_sd,"_sdmax_",max_sd,"_rate_",rate,"_mut_",new_strain_fact,"_trigmin_",trig_min,"_trigmax_",trig_max,"_cover_",cover,"_import_",imports)
+suffix=paste0(dist,"_vei_",vei,"_ves_",ves,"_vep_",vep,"_sdmin_",min_sd,"_sdmax_",max_sd,"_rate_",rate,"_mut_",new_strain_fact,"_trigmin_",trig_min,"_trigmax_",trig_max,"_cover_",cover,"_import_",imports,"_sever_",severity,"_sddelta_",sd_delta)
 print(suffix)
 
 if (plot_em == 0)
