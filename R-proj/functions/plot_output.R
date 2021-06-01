@@ -1363,7 +1363,7 @@ draw_all_month_axis = function()
   ylabels = c(yday(label1), 366 + yday(label2), 731 + yday(label3))
   axis(side = 1, las=2, at = ylabels, labels = mo_labels)
 }
-plot_vac_reff_correl = function(set, doy, vac_data, reff_data, doy_actual, result_actual, y_lab = "result",
+plot_vac_reff_correl = function(doy, vac_data, reff_data, doy_actual, result_actual, y_lab = "result",
                           col_pal = "black", col_idx = 1, delta = NULL, 
                           vaccination_date = NULL, calib_date = NULL, 
                           sd_vals, x_lim = NULL, y_lim = NULL,
@@ -1457,23 +1457,8 @@ plot_vac_reff_correl = function(set, doy, vac_data, reff_data, doy_actual, resul
   }
   
   print(paste((x_lim[1]+1),x_lim[2],reff_data[doy==(x_lim[1]+1),1],reff_data[doy==(x_lim[2]),1]))
-  if (set == 1)
-  {
-	col_min=2
-	col_max=10
-  }
-  else if (set == 2)
-  {
-	col_min=11
-	col_max=19
-  }
-  else
-  {
-	col_min=20
-	col_max=28
-  }
-  #for (i in ncol(vac_data):2) # reverse order so base scenario plotted last
-  #for (i in col_max:col_min) # reverse order so base scenario plotted last
+  col_min=2
+  col_max=10
   for (i in col_min:col_max) 
   {
     found = 0
@@ -1487,12 +1472,8 @@ plot_vac_reff_correl = function(set, doy, vac_data, reff_data, doy_actual, resul
 	    print(paste(i,cross_date))
 	}
     }
-    color_idx = (as.integer((i-2)/3)*3 + (i-2)%%3)%%9 + 2
-    print(color_idx)
-    ch_idx = as.integer((i-2)/9)
-    print(ch_idx)
+    color_idx = i
     if (found == 1)
-	#points(x = cross_date, y = vac_data[doy==cross_date,i], col = col_pal[col_idx[color_idx]], pch = 16, cex=1.5)
 	points(x = cross_date, y = vac_data[doy==cross_date,i], col = col_pal[col_idx[color_idx]], pch = 16, cex=1.5)
 	lines(x = c(cross_date,cross_date), y = c(0,vac_data[doy==cross_date,i]), col = col_pal[col_idx[color_idx]], lty = 1)
   }

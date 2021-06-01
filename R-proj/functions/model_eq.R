@@ -148,8 +148,8 @@ determine_vax_dist = function(time,state,parameters)
 
 	vac_dist_i = c(0,0,0,0)
 
-	# The usual logic fills each age group up to the "coverage" level using 80% towards the oldest
-	# non-covered group & 10% to each of the other non-child groups
+	# The usual logic fills each age group up to the "coverage" level using 60% towards the oldest
+	# non-covered group, 30% to young adults (emerg workers, etc)  & 10% to the other non-child group
 	# for children (once started), set aside doses starting 4/1/21 in increasing amounts
 
 
@@ -159,12 +159,14 @@ determine_vax_dist = function(time,state,parameters)
 	    {
 		if (S_i[4] > new_intros + 1 && Vtot_i[4] < N_i[4]*vac_coverage) {
 		    if (child_vax == 0)
+			#vac_dist_i = c(0,0.3,0.1,0.6) uncomment for 60% to 70+
 			vac_dist_i = c(0,0.1,0.1,0.8)
 		    else
 			vac_dist_i = c(0.1 * child_vax,0.1 * (2-child_vax),0.1,0.7)
 		}
 		else if (S_i[3] > new_intros + 1 && Vtot_i[3] < N_i[3]*vac_coverage) {
 		    if (child_vax == 0)
+			#vac_dist_i = c(0,0.4,0.6,0) uncomment for 60% to 50-69
 			vac_dist_i = c(0,0.2,0.8,0)
 		    else
 			vac_dist_i = c(0.1* child_vax,0.1* (2-child_vax),0.8,0)
